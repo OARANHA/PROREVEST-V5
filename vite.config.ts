@@ -10,20 +10,18 @@ export default defineConfig({
     tsconfigPaths()
   ],
   build: {
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          router: ['react-router', 'react-router-dom'],
-          supabase: ['@supabase/supabase-js'],
-          pdf: ['jspdf', 'jspdf-autotable'],
-          icons: ['@heroicons/react', 'lucide-react']
-        }
-      }
-    },
     minify: 'terser',
     sourcemap: false,
-    chunkSizeWarningLimit: 1000
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      onwarn(warning, warn) {
+        // Ignorar warning sobre manualChunks
+        if (warning.code === 'EXTERNAL_MODULES_CANNOT_BE_INCLUDED_IN_MANUAL_CHUNKS') {
+          return
+        }
+        warn(warning)
+      }
+    }
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom']

@@ -1,0 +1,153 @@
+# 🚀 Configuração Apache - ProRevest V5
+# Otimizado para React Router e SEO
+
+# Ativar rewrites
+RewriteEngine On
+
+# Forçar HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Forçar WWW (opcional - comente se não quiser www)
+# RewriteCond %{HTTP_HOST} ^prorevesttintas\.com\.br [NC]
+# RewriteRule ^(.*)$ https://www.%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Remover trailing slash
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.+)/$ /$1 [L,R=301]
+
+# React Router SPA fallback
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ /index.html [L,QSA]
+
+# Security Headers
+<IfModule mod_headers.c>
+    # Proteção XSS
+    Header set X-XSS-Protection "1; mode=block"
+    
+    # Prevenir clickjacking
+    Header set X-Frame-Options "SAMEORIGIN"
+    
+    # Prevenir MIME sniffing
+    Header set X-Content-Type-Options "nosniff"
+    
+    # Referrer Policy
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    
+    # HSTS (HTTPS Only)
+    Header set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    
+    # CSP Básico
+    Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://api.supabase.co"
+</IfModule>
+
+# Compressão Gzip
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/xml
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/x-javascript
+    AddOutputFilterByType DEFLATE application/json
+</IfModule>
+
+# Cache estático
+<IfModule mod_expires.c>
+    ExpiresActive On
+    
+    # Imagens
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType image/x-icon "access plus 1 year"
+    
+    # CSS e JS
+    ExpiresByType text/css "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType application/x-javascript "access plus 1 year"
+    
+    # Fontes
+    ExpiresByType font/woff "access plus 1 year"
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType application/font-woff "access plus 1 year"
+    ExpiresByType application/font-woff2 "access plus 1 year"
+    
+    # HTML (não cachear)
+    ExpiresByType text/html "access plus 0 seconds"
+</IfModule>
+
+# ETags
+<IfModule mod_headers.c>
+    Header unset ETag
+</IfModule>
+FileETag None
+
+# Performance
+<IfModule mod_headers.c>
+    # Keep-alive
+    Header set Connection keep-alive
+    
+    # Remove server signature
+    ServerSignature Off
+</IfModule>
+
+# Restringir acesso a arquivos sensíveis
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+<FilesMatch "(\.env|\.log|\.bak|\.backup|\.sql|\.git)">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Prevenir listagem de diretórios
+Options -Indexes
+
+# Charset padrão
+AddDefaultCharset UTF-8
+
+# MIME types adicionais
+<IfModule mod_mime.c>
+    AddType application/javascript .js
+    AddType application/json .json
+    AddType image/svg+xml .svg
+    AddType font/woff .woff
+    AddType font/woff2 .woff2
+    AddType application/font-woff .woff
+    AddType application/font-woff2 .woff2
+</IfModule>
+
+# CORS para APIs (se necessário)
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "https://prorevesttintas.com.br"
+    Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    Header set Access-Control-Allow-Headers "Content-Type, Authorization"
+</IfModule>
+
+# Health endpoint
+<IfModule mod_rewrite.c>
+    RewriteRule ^health$ - [L]
+    RewriteRule ^health/$ - [L]
+</IfModule>
+
+# Sitemap
+<IfModule mod_rewrite.c>
+    RewriteRule ^sitemap\.xml$ /sitemap.xml [L]
+    RewriteRule ^robots\.txt$ /robots.txt [L]
+</IfModule>
+
+# Redirecionamentos personalizados (se necessário)
+# Redirect 301 /antiga-url https://prorevesttintas.com.br/nova-url
+
+# Página de erro personalizada (opcional)
+# ErrorDocument 404 /index.html
+# ErrorDocument 500 /index.html
