@@ -1,0 +1,510 @@
+<best_practices>
+  <general_principles>
+    <principle priority="high">
+      <name>Soluções Imediatas e Executáveis</name>
+      <description>
+        Priorize sempre fornecer soluções que possam ser implementadas imediatamente,
+        mesmo que sejam soluções temporárias que possam ser refinadas posteriormente.
+      </description>
+      <rationale>
+        Em ambientes de desenvolvimento ágil, a velocidade de resolução de problemas
+        é crucial para manter o fluxo de trabalho e a produtividade.
+      </rationale>
+      <example>
+        <scenario>Erro de autenticação com Supabase</scenario>
+        <good>
+          Implementar uma correção imediata com retry e logging detalhado,
+          depois planejar uma refatoração para melhorar a arquitetura.
+        </good>
+        <bad>
+          Passar horas projetando a solução perfeita enquanto o sistema permanece inoperável.
+        </bad>
+      </example>
+    </principle>
+
+    <principle priority="high">
+      <name>Diagnóstico Rápido e Preciso</name>
+      <description>
+        Utilize técnicas eficientes para identificar a causa raiz dos problemas,
+        evitando análises excessivamente longas que atrasam a solução.
+      </description>
+      <rationale>
+        A identificação rápida do problema permite focar os esforços na solução
+        adequada, reduzindo o tempo de inatividade e frustração.
+      </rationale>
+      <example>
+        <scenario>Performance lenta em componentes React</scenario>
+        <good>
+          Usar React DevTools para identificar renderizações desnecessárias
+          e memoização inadequada, aplicando correções direcionadas.
+        </good>
+        <bad>
+          Reescrever todo o componente sem entender primeiro o gargalo real.
+        </bad>
+      </example>
+    </principle>
+
+    <principle priority="medium">
+      <name>Balanço entre Velocidade e Qualidade</name>
+      <description>
+        Encontre o equilíbrio ideal entre resolver o problema rapidamente
+        e manter a qualidade e segurança do código.
+      </description>
+      <rationale>
+        Soluções rápidas demais podem introduzir novos problemas ou dívida técnica,
+        enquanto soluções excessivamente perfeccionistas atrasam a entrega.
+      </rationale>
+      <example>
+        <scenario>Problema de roteamento dinâmico</scenario>
+        <good>
+          Implementar uma solução funcional e segura rapidamente,
+          com comentários indicando onde melhorias futuras podem ser feitas.
+        </good>
+        <bad>
+          Entregar uma solução rápida mas insegura, ou demorar demais
+        buscando a arquitetura perfeita.
+        </bad>
+      </example>
+    </principle>
+  </general_principles>
+
+  <react_router_v7_practices>
+    <practice name="Estrutura de Rotas">
+      <rule>
+        Mantenha uma estrutura de rotas clara e hierárquica, utilizando
+        nested routes para organizar funcionalidades relacionadas.
+      </rule>
+      <examples>
+        <good>
+          <![CDATA[
+// Boa estrutura com nested routes
+createBrowserRouter([
+  {
+    path: "/dashboard",
+    element: <DashboardLayout />,
+    children: [
+      { index: true, element: <DashboardHome /> },
+      { path: "projects", element: <ProjectsList /> },
+      { path: "projects/:id", element: <ProjectDetail /> }
+    ]
+  }
+])
+          ]]>
+        </good>
+        <bad>
+          <![CDATA[
+// Estrutura plana e desorganizada
+createBrowserRouter([
+  { path: "/dashboard", element: <DashboardLayout /> },
+  { path: "/dashboard/home", element: <DashboardHome /> },
+  { path: "/dashboard/projects", element: <ProjectsList /> },
+  { path: "/dashboard/projects/:id", element: <ProjectDetail /> }
+])
+          ]]>
+        </bad>
+      </examples>
+    </practice>
+
+    <practice name="Loaders e Actions">
+      <rule>
+        Utilize loaders para carregamento de dados e actions para mutações,
+        mantendo a lógica de dados separada dos componentes.
+      </rule>
+      <template>
+        <![CDATA[
+// Exemplo de loader e action bem estruturados
+async function projectLoader({ params }) {
+  const response = await fetch(`/api/projects/${params.id}`);
+  if (!response.ok) throw new Response("Not Found", { status: 404 });
+  return response.json();
+}
+
+async function projectAction({ request, params }) {
+  const formData = await request.formData();
+  const updates = Object.fromEntries(formData);
+  
+  const response = await fetch(`/api/projects/${params.id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates)
+  });
+  
+  return response.json();
+}
+        ]]>
+      </template>
+    </practice>
+
+    <practice name="Error Handling">
+      <rule>
+        Implemente error boundaries e trate erros de roteamento
+        de forma elegante, fornecendo feedback claro ao usuário.
+      </rule>
+      <template>
+        <![CDATA[
+// Error boundary para rotas
+export function ErrorBoundary() {
+  const error = useRouteError();
+  
+  return (
+    <div className="error-container">
+      <h1>Oops! Algo deu errado</h1>
+      <p>{error.message || 'Ocorreu um erro inesperado'}</p>
+      <Link to="/">Voltar para o início</Link>
+    </div>
+  );
+}
+        ]]>
+      </template>
+    </practice>
+  </react_router_v7_practices>
+
+  <supabase_practices>
+    <practice name="Autenticação Segura">
+      <rule>
+        Implemente autenticação com Supabase seguindo as melhores práticas
+        de segurança, incluindo validação de sessão e refresh tokens.
+      </rule>
+      <template>
+        <![CDATA[
+// Exemplo de autenticação segura com Supabase
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
+
+// Verificar sessão atual
+export async function getCurrentSession() {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  
+  if (error) {
+    console.error('Erro ao obter sessão:', error);
+    return null;
+  }
+  
+  return session;
+}
+
+// Listener para mudanças de autenticação
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'TOKEN_REFRESHED') {
+    // Atualizar estado da aplicação
+  }
+});
+        ]]>
+      </template>
+    </practice>
+
+    <practice name="Queries Otimizadas">
+      <rule>
+        Otimize queries do Supabase com seleção de campos específicos,
+        filtros adequados e paginação para melhorar performance.
+      </rule>
+      <template>
+        <![CDATA[
+// Query otimizada com seleção específica e paginação
+async function getProjects(page = 1, limit = 10) {
+  const start = (page - 1) * limit;
+  const end = start + limit - 1;
+  
+  const { data, error } = await supabase
+    .from('projects')
+    .select(`
+      id,
+      name,
+      description,
+      created_at,
+      profiles(name, avatar_url)
+    `)
+    .order('created_at', { ascending: false })
+    .range(start, end);
+  
+  if (error) throw error;
+  return data;
+}
+        ]]>
+      </template>
+    </practice>
+
+    <practice name="Real-time Subscriptions">
+      <rule>
+        Implemente subscriptions de real-time de forma eficiente,
+        limpando listeners quando não são mais necessários.
+      </rule>
+      <template>
+        <![CDATA[
+// Subscription bem gerenciada
+function useProjectUpdates(projectId) {
+  const [updates, setUpdates] = useState([]);
+  
+  useEffect(() => {
+    const subscription = supabase
+      .channel(`project-${projectId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'project_updates',
+          filter: `project_id=eq.${projectId}`
+        },
+        (payload) => {
+          setUpdates(prev => [...prev, payload.new]);
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [projectId]);
+  
+  return updates;
+}
+        ]]>
+      </template>
+    </practice>
+  </supabase_practices>
+
+  <ui_responsive_practices>
+    <practice name="Design System Consistente">
+      <rule>
+        Mantenha consistência visual através de um design system bem definido,
+        com componentes reutilizáveis e tokens de design.
+      </rule>
+      <template>
+        <![CDATA[
+// Exemplo de tokens de design e componente consistente
+// tokens.ts
+export const tokens = {
+  colors: {
+    primary: '#3b82f6',
+    secondary: '#64748b',
+    success: '#10b981',
+    error: '#ef4444'
+  },
+  spacing: {
+    xs: '0.5rem',
+    sm: '1rem',
+    md: '1.5rem',
+    lg: '2rem',
+    xl: '3rem'
+  },
+  borderRadius: {
+    sm: '0.25rem',
+    md: '0.5rem',
+    lg: '0.75rem'
+  }
+};
+
+// Button component consistente
+export function Button({ variant = 'primary', size = 'md', children, ...props }) {
+  return (
+    <button
+      className={`
+        button button-${variant} button-${size}
+        rounded-${tokens.borderRadius.md}
+        px-${tokens.spacing.sm}
+        py-${tokens.spacing.xs}
+      `}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+        ]]>
+      </template>
+    </practice>
+
+    <practice name="Responsividade Mobile-First">
+      <rule>
+        Adote abordagem mobile-first para design responsivo,
+        garantindo experiência ótima em todos os dispositivos.
+      </rule>
+      <template>
+        <![CDATA[
+// Exemplo de abordagem mobile-first
+.container {
+  width: 100%;
+  padding: 1rem;
+  margin: 0 auto;
+}
+
+@media (min-width: 640px) {
+  .container {
+    max-width: 640px;
+    padding: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1024px;
+    padding: 2rem;
+  }
+}
+
+// Componente responsivo
+export function ResponsiveCard({ title, children }) {
+  return (
+    <div className="card">
+      <h3 className="card-title text-lg md:text-xl">{title}</h3>
+      <div className="card-content text-sm md:text-base">
+        {children}
+      </div>
+    </div>
+  );
+}
+        ]]>
+      </template>
+    </practice>
+  </ui_responsive_practices>
+
+  <performance_optimization_practices>
+    <practice name="Memoização Eficiente">
+      <rule>
+        Utilize memoização de forma estratégica para evitar renderizações
+        desnecessárias, mas sem exagerar na complexidade.
+      </rule>
+      <template>
+        <![CDATA[
+// Uso estratégico de memoização
+import { memo, useMemo, useCallback } from 'react';
+
+// Memo para componentes puros que recebem as mesmas props
+const ExpensiveComponent = memo(function ExpensiveComponent({ data, onItemClick }) {
+  const processedData = useMemo(() => {
+    return data.map(item => ({
+      ...item,
+      formattedDate: new Date(item.date).toLocaleDateString()
+    }));
+  }, [data]);
+  
+  const handleClick = useCallback((id) => {
+    onItemClick(id);
+  }, [onItemClick]);
+  
+  return (
+    <div>
+      {processedData.map(item => (
+        <div key={item.id} onClick={() => handleClick(item.id)}>
+          {item.name} - {item.formattedDate}
+        </div>
+      ))}
+    </div>
+  );
+});
+        ]]>
+      </template>
+    </practice>
+
+    <practice name="Lazy Loading de Componentes">
+      <rule>
+        Implemente lazy loading para componentes pesados ou rotas secundárias
+        para melhorar o tempo de carregamento inicial.
+      </rule>
+      <template>
+        <![CDATA[
+// Lazy loading de componentes e rotas
+import { lazy, Suspense } from 'react';
+import { createBrowserRouter } from 'react-router-dom';
+
+// Lazy loading de componentes
+const HeavyChart = lazy(() => import('./components/HeavyChart'));
+const AdminPanel = lazy(() => import('./pages/AdminPanel'));
+
+// Componente com fallback
+function LazyComponentWrapper() {
+  return (
+    <Suspense fallback={<div>Carregando...</div>}>
+      <HeavyChart />
+    </Suspense>
+  );
+}
+
+// Router com lazy loading
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Layout />,
+    children: [
+      { index: true, element: <Home /> },
+      { 
+        path: "admin", 
+        element: (
+          <Suspense fallback={<div>Carregando painel...</div>}>
+            <AdminPanel />
+          </Suspense>
+        )
+      }
+    ]
+  }
+]);
+        ]]>
+      </template>
+    </practice>
+  </performance_optimization_practices>
+
+  <common_pitfalls>
+    <pitfall>
+      <description>Soluções Complexas Demais para Problemas Simples</description>
+      <why_problematic>
+        Aumenta desnecessariamente a complexidade do código e o tempo de desenvolvimento,
+        tornando a manutenção mais difícil.
+      </why_problematic>
+      <correct_approach>
+        Busque sempre a solução mais simples que resolva o problema efetivamente.
+        Complexidade adicional só deve ser adicionada quando estritamente necessária.
+      </correct_approach>
+    </pitfall>
+
+    <pitfall>
+      <description>Ignorar Performance em Busca de Funcionalidade</description>
+      <why_problematic>
+        Funcionalidades que funcionam mas são lentas resultam em má experiência do usuário
+        e podem causar problemas de escalabilidade.
+      </why_problematic>
+      <correct_approach>
+        Sempre considere o impacto de performance das suas soluções.
+        Utilize ferramentas de profiling e otimize os gargalos identificados.
+      </correct_approach>
+    </pitfall>
+
+    <pitfall>
+      <description>Falta de Tratamento Adequado de Erros</description>
+      <why_problematic>
+        Erros não tratados podem causar falhas catastróficas e experiência ruim para o usuário.
+      </why_problematic>
+      <correct_approach>
+        Implemente tratamento de erros robusto em todos os pontos críticos,
+        fornecendo feedback claro e mecanismos de recuperação.
+      </correct_approach>
+    </pitfall>
+  </common_pitfalls>
+
+  <quality_checklist>
+    <category name="antes_de_começar">
+      <item>Entender completamente o problema e seu contexto</item>
+      <item>Identificar os componentes e tecnologias afetadas</item>
+      <item>Verificar se há soluções similares já implementadas</item>
+      <item>Avaliar o impacto da mudança no sistema</item>
+    </category>
+    <category name="durante_implementação">
+      <item>Manter o código limpo e bem comentado</item>
+      <item>Seguir os padrões de código do projeto</item>
+      <item>Implementar tratamento de erros adequado</item>
+      <item>Considerar implicações de segurança</item>
+      <item>Otimizar para performance quando necessário</item>
+    </category>
+    <category name="antes_de_finalizar">
+      <item>Testar a solução em diferentes cenários</item>
+      <item>Verificar se não introduziu regressões</item>
+      <item>Documentar mudanças importantes</item>
+      <item>Garantir que a solução é escalável</item>
+      <item>Validar que o problema original foi resolvido</item>
+    </category>
+  </quality_checklist>
+</best_practices>

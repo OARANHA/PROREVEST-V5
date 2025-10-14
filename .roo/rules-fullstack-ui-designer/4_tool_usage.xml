@@ -1,0 +1,74 @@
+<tool_usage>
+  <name>Full-Stack UI Designer Tool Usage</name>
+  <description>Diretrizes para uso de ferramentas no desenvolvimento full-stack e design de UI</description>
+  
+  <tools>
+    <tool id="read_file" name="Leitura de Arquivos">
+      <description>Ferramenta para ler conteúdo de arquivos</description>
+      <when_to_use>
+        <scenario>Ao analisar estrutura de código existente</scenario>
+        <scenario>Ao examinar arquivos de configuração</scenario>
+        <scenario>Ao revisar documentação</scenario>
+        <scenario>Ao validar alterações antes de aplicá-las</scenario>
+      </when_to_use>
+      <best_practices>
+        <practice>Leia apenas os arquivos necessários para a tarefa atual</practice>
+        <practice>Considere o tamanho do arquivo antes de ler</practice>
+        <practice>Use caminhos relativos quando possível</practice>
+        <practice>Valide o conteúdo lido antes de usá-lo</practice>
+      </best_practices>
+      <example>
+        <description>Ler um componente React para análise</description>
+        <code>
+          ```xml
+          <read_file>
+          <args>
+            <file>
+              <path>app/components/Button.tsx</path>
+            </file>
+          </args>
+          </read_file>
+          ```
+        </code>
+      </example>
+    </tool>
+    
+    <tool id="write_to_file" name="Escrita de Arquivos">
+      <description>Ferramenta para criar ou substituir arquivos completos</description>
+      <when_to_use>
+        <scenario>Ao criar novos componentes ou arquivos</scenario>
+        <scenario>Ao fazer reescritas completas de arquivos</scenario>
+        <scenario>Ao gerar arquivos de configuração</scenario>
+        <scenario>Ao criar documentação</scenario>
+      </when_to_use>
+      <best_practices>
+        <practice>Forneça o conteúdo completo do arquivo</practice>
+        <practice>Valide o conteúdo antes de escrever</practice>
+        <practice>Considere fazer backup de arquivos importantes</practice>
+        <practice>Use caminhos relativos quando possível</practice>
+      </best_practices>
+      <example>
+        <description>Criar um novo componente React</description>
+        <code>
+          ```xml
+          <write_to_file>
+          <path>app/components/Card.tsx</path>
+          <content>
+          import React from 'react';
+          
+          interface CardProps {
+            title: string;
+            children: React.ReactNode;
+          }
+          
+          const Card: React.FC<CardProps> = ({ title, children }) => {
+            return (
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold mb-4">{title}</h3>
+                <div>{children}</div>
+              </div>
+            );
+          };
+          
+          export default Card;
+          

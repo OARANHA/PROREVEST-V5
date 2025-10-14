@@ -1,0 +1,1737 @@
+<common_patterns>
+  <name>Full-Stack UI Designer Common Patterns</name>
+  <description>Padrões comuns para desenvolvimento full-stack e design de UI com React/Remix</description>
+  
+  <categories>
+    <category id="ui-patterns" name="Padrões de UI">
+      <patterns>
+        <pattern id="ui-1" name="Componente de Cartão">
+          <description>Componente reutilizável para exibir conteúdo em formato de cartão</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              interface CardProps {
+                title: string;
+                children: React.ReactNode;
+                className?: string;
+                onClick?: () => void;
+              }
+              
+              const Card: React.FC<CardProps> = ({ 
+                title, 
+                children, 
+                className = '', 
+                onClick 
+              }) => {
+                return (
+                  <div 
+                    className={`bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow ${className}`}
+                    onClick={onClick}
+                  >
+                    <h3 className="text-lg font-semibold mb-4">{title}</h3>
+                    <div className="text-gray-700">
+                      {children}
+                    </div>
+                  </div>
+                );
+              };
+              
+              export default Card;
+              ```
+            </code_example>
+          </implementation>
+          <use_cases>
+            <use_case>Exibição de informações resumidas</use_case>
+            <use_case>Cards de produtos em e-commerce</use_case>
+            <use_case>Dashboard widgets</use_case>
+          </use_cases>
+        </pattern>
+        
+        <pattern id="ui-2" name="Modal Reutilizável">
+          <description>Componente modal configurável para diversas situações</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              interface ModalProps {
+                isOpen: boolean;
+                onClose: () => void;
+                title: string;
+                children: React.ReactNode;
+                size?: 'sm' | 'md' | 'lg';
+              }
+              
+              const Modal: React.FC<ModalProps> = ({ 
+                isOpen, 
+                onClose, 
+                title, 
+                children, 
+                size = 'md' 
+              }) => {
+                if (!isOpen) return null;
+                
+                const sizeClasses = {
+                  sm: 'max-w-md',
+                  md: 'max-w-lg',
+                  lg: 'max-w-2xl'
+                };
+                
+                return (
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className={`bg-white rounded-lg shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-y-auto`}>
+                      <div className="flex justify-between items-center p-6 border-b">
+                        <h2 className="text-xl font-semibold">{title}</h2>
+                        <button 
+                          onClick={onClose}
+                          className="text-gray-500 hover:text-gray-700"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="p-6">
+                        {children}
+                      </div>
+                    </div>
+                  </div>
+                );
+              };
+              
+              export default Modal;
+              ```
+            </code_example>
+          </implementation>
+          <use_cases>
+            <use_case>Formulários de edição</use_case>
+            <use_case>Confirmação de ações</use_case>
+            <use_case>Exibição detalhada de informações</use_case>
+          </use_cases>
+        </pattern>
+        
+        <pattern id="ui-3" name="Lista com Paginação">
+          <description>Componente para exibir listas com paginação</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              interface PaginatedListProps<T> {
+                items: T[];
+                renderItem: (item: T) => React.ReactNode;
+                itemsPerPage: number;
+                currentPage: number;
+                onPageChange: (page: number) => void;
+                totalItems: number;
+              }
+              
+              const PaginatedList = <T,>({
+                items,
+                renderItem,
+                itemsPerPage,
+                currentPage,
+                onPageChange,
+                totalItems
+              }: PaginatedListProps<T>) => {
+                const totalPages = Math.ceil(totalItems / itemsPerPage);
+                
+                const handlePrevious = () => {
+                  if (currentPage > 1) {
+                    onPageChange(currentPage - 1);
+                  }
+                };
+                
+                const handleNext = () => {
+                  if (currentPage < totalPages) {
+                    onPageChange(currentPage + 1);
+                  }
+                };
+                
+                return (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      {items.map((item, index) => (
+                        <div key={index}>
+                          {renderItem(item)}
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {totalPages > 1 && (
+                      <div className="flex justify-between items-center mt-6">
+                        <button
+                          onClick={handlePrevious}
+                          disabled={currentPage === 1}
+                          className={`px-4 py-2 rounded-md ${
+                            currentPage === 1
+                              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                              : 'bg-blue-500 text-white hover:bg-blue-600'
+                          }`}
+                        >
+                          Anterior
+                        </button>
+                        
+                        <div className="text-gray-700">
+                          Página {currentPage} de {totalPages}
+                        </div>
+                        
+                        <button
+                          onClick={handleNext}
+                          disabled={currentPage === totalPages}
+                          className={`px-4 py-2 rounded-md ${
+                            currentPage === totalPages
+                              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                              : 'bg-blue-500 text-white hover:bg-blue-600'
+                          }`}
+                        >
+                          Próxima
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              };
+              
+              export default PaginatedList;
+              ```
+            </code_example>
+          </implementation>
+          <use_cases>
+            <use_case>Listas de resultados de busca</use_case>
+            <use_case>Exibição de produtos em catálogo</use_case>
+            <use_case>Registros em tabelas de dados</use_case>
+          </use_cases>
+        </pattern>
+        
+        <pattern id="ui-4" name="Formulário com Validação">
+          <description>Componente de formulário com validação integrada</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              interface FormField {
+                name: string;
+                label: string;
+                type: 'text' | 'email' | 'password' | 'number' | 'select' | 'textarea';
+                required?: boolean;
+                options?: { value: string; label: string }[];
+                validation?: (value: string) => string | null;
+              }
+              
+              interface FormProps {
+                fields: FormField[];
+                onSubmit: (data: Record<string, string>) => void;
+                initialValues?: Record<string, string>;
+                submitText?: string;
+              }
+              
+              const Form: React.FC<FormProps> = ({
+                fields,
+                onSubmit,
+                initialValues = {},
+                submitText = 'Enviar'
+              }) => {
+                const [values, setValues] = useState<Record<string, string>>(initialValues);
+                const [errors, setErrors] = useState<Record<string, string>>({});
+                const [touched, setTouched] = useState<Record<string, boolean>>({});
+                
+                const handleChange = (name: string, value: string) => {
+                  setValues(prev => ({ ...prev, [name]: value }));
+                  
+                  if (touched[name]) {
+                    const field = fields.find(f => f.name === name);
+                    if (field?.validation) {
+                      const error = field.validation(value);
+                      setErrors(prev => ({ ...prev, [name]: error || '' }));
+                    }
+                  }
+                };
+                
+                const handleBlur = (name: string) => {
+                  setTouched(prev => ({ ...prev, [name]: true }));
+                  
+                  const field = fields.find(f => f.name === name);
+                  if (field?.validation) {
+                    const error = field.validation(values[name]);
+                    setErrors(prev => ({ ...prev, [name]: error || '' }));
+                  }
+                };
+                
+                const handleSubmit = (e: React.FormEvent) => {
+                  e.preventDefault();
+                  
+                  // Validate all fields
+                  const newErrors: Record<string, string> = {};
+                  let hasErrors = false;
+                  
+                  fields.forEach(field => {
+                    if (field.validation) {
+                      const error = field.validation(values[field.name]);
+                      if (error) {
+                        newErrors[field.name] = error;
+                        hasErrors = true;
+                      }
+                    }
+                  });
+                  
+                  setErrors(newErrors);
+                  
+                  if (!hasErrors) {
+                    onSubmit(values);
+                  }
+                };
+                
+                const renderField = (field: FormField) => {
+                  const value = values[field.name] || '';
+                  const error = errors[field.name];
+                  const isTouched = touched[field.name];
+                  
+                  switch (field.type) {
+                    case 'select':
+                      return (
+                        <select
+                          id={field.name}
+                          value={value}
+                          onChange={(e) => handleChange(field.name, e.target.value)}
+                          onBlur={() => handleBlur(field.name)}
+                          className={`w-full px-3 py-2 border rounded-md ${
+                            error ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                        >
+                          <option value="">Selecione uma opção</option>
+                          {field.options?.map(option => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      );
+                    
+                    case 'textarea':
+                      return (
+                        <textarea
+                          id={field.name}
+                          value={value}
+                          onChange={(e) => handleChange(field.name, e.target.value)}
+                          onBlur={() => handleBlur(field.name)}
+                          rows={4}
+                          className={`w-full px-3 py-2 border rounded-md ${
+                            error ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                        />
+                      );
+                    
+                    default:
+                      return (
+                        <input
+                          id={field.name}
+                          type={field.type}
+                          value={value}
+                          onChange={(e) => handleChange(field.name, e.target.value)}
+                          onBlur={() => handleBlur(field.name)}
+                          className={`w-full px-3 py-2 border rounded-md ${
+                            error ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                        />
+                      );
+                  }
+                };
+                
+                return (
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    {fields.map(field => (
+                      <div key={field.name}>
+                        <label htmlFor={field.name} className="block text-sm font-medium text-gray-700 mb-1">
+                          {field.label}
+                          {field.required && <span className="text-red-500 ml-1">*</span>}
+                        </label>
+                        {renderField(field)}
+                        {errors[field.name] && (
+                          <p className="mt-1 text-sm text-red-600">{errors[field.name]}</p>
+                        )}
+                      </div>
+                    ))}
+                    
+                    <button
+                      type="submit"
+                      className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors"
+                    >
+                      {submitText}
+                    </button>
+                  </form>
+                );
+              };
+              
+              export default Form;
+              ```
+            </code_example>
+          </implementation>
+          <use_cases>
+            <use_case>Formulários de cadastro</use_case>
+            <use_case>Formulários de edição de perfil</use_case>
+            <use_case>Formulários de contato</use_case>
+          </use_cases>
+        </pattern>
+      </patterns>
+    </category>
+    
+    <category id="react-patterns" name="Padrões React">
+      <patterns>
+        <pattern id="react-1" name="Hook Personalizado para API">
+          <description>Hook customizado para gerenciar chamadas de API</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              interface UseApiOptions<T> {
+                url: string;
+                method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+                body?: any;
+                headers?: Record<string, string>;
+                immediate?: boolean;
+              }
+              
+              interface UseApiResult<T> {
+                data: T | null;
+                loading: boolean;
+                error: Error | null;
+                execute: (options?: Partial<UseApiOptions<T>>) => Promise<void>;
+              }
+              
+              function useApi<T>(options: UseApiOptions<T>): UseApiResult<T> {
+                const [data, setData] = useState<T | null>(null);
+                const [loading, setLoading] = useState(false);
+                const [error, setError] = useState<Error | null>(null);
+                
+                const execute = async (executeOptions?: Partial<UseApiOptions<T>>) => {
+                  const finalOptions = { ...options, ...executeOptions };
+                  
+                  setLoading(true);
+                  setError(null);
+                  
+                  try {
+                    const response = await fetch(finalOptions.url, {
+                      method: finalOptions.method || 'GET',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        ...finalOptions.headers
+                      },
+                      body: finalOptions.body ? JSON.stringify(finalOptions.body) : undefined
+                    });
+                    
+                    if (!response.ok) {
+                      throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const result = await response.json();
+                    setData(result);
+                  } catch (err) {
+                    setError(err instanceof Error ? err : new Error('Unknown error'));
+                  } finally {
+                    setLoading(false);
+                  }
+                };
+                
+                useEffect(() => {
+                  if (options.immediate !== false) {
+                    execute();
+                  }
+                }, []);
+                
+                return { data, loading, error, execute };
+              }
+              
+              export default useApi;
+              ```
+            </code_example>
+          </implementation>
+          <use_cases>
+            <use_case>Busca de dados de usuários</use_case>
+            <use_case>Envio de formulários</use_case>
+            <use_case>Atualização de dados</use_case>
+          </use_cases>
+        </pattern>
+        
+        <pattern id="react-2" name="Hook Personalizado para Formulários">
+          <description>Hook customizado para gerenciar estado de formulários</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              interface FormState<T> {
+                values: T;
+                errors: Partial<Record<keyof T, string>>;
+                touched: Partial<Record<keyof T, boolean>>;
+              }
+              
+              interface UseFormOptions<T> {
+                initialValues: T;
+                validation?: (values: T) => Partial<Record<keyof T, string>>;
+                onSubmit: (values: T) => void | Promise<void>;
+              }
+              
+              function useForm<T extends Record<string, any>>({
+                initialValues,
+                validation,
+                onSubmit
+              }: UseFormOptions<T>) {
+                const [state, setState] = useState<FormState<T>>({
+                  values: initialValues,
+                  errors: {},
+                  touched: {}
+                });
+                
+                const handleChange = (name: keyof T, value: any) => {
+                  setState(prev => ({
+                    ...prev,
+                    values: {
+                      ...prev.values,
+                      [name]: value
+                    }
+                  }));
+                };
+                
+                const handleBlur = (name: keyof T) => {
+                  setState(prev => ({
+                    ...prev,
+                    touched: {
+                      ...prev.touched,
+                      [name]: true
+                    }
+                  }));
+                  
+                  if (validation) {
+                    const errors = validation(state.values);
+                    setState(prev => ({
+                      ...prev,
+                      errors
+                    }));
+                  }
+                };
+                
+                const handleSubmit = async (e: React.FormEvent) => {
+                  e.preventDefault();
+                  
+                  // Mark all fields as touched
+                  const touched = Object.keys(state.values).reduce((acc, key) => {
+                    acc[key as keyof T] = true;
+                    return acc;
+                  }, {} as Partial<Record<keyof T, boolean>>);
+                  
+                  setState(prev => ({
+                    ...prev,
+                    touched
+                  }));
+                  
+                  // Validate all fields
+                  let errors: Partial<Record<keyof T, string>> = {};
+                  if (validation) {
+                    errors = validation(state.values);
+                  }
+                  
+                  setState(prev => ({
+                    ...prev,
+                    errors
+                  }));
+                  
+                  // If no errors, submit
+                  if (Object.keys(errors).length === 0) {
+                    await onSubmit(state.values);
+                  }
+                };
+                
+                const reset = () => {
+                  setState({
+                    values: initialValues,
+                    errors: {},
+                    touched: {}
+                  });
+                };
+                
+                return {
+                  values: state.values,
+                  errors: state.errors,
+                  touched: state.touched,
+                  handleChange,
+                  handleBlur,
+                  handleSubmit,
+                  reset
+                };
+              }
+              
+              export default useForm;
+              ```
+            </code_example>
+          </implementation>
+          <use_cases>
+            <use_case>Formulários de cadastro</use_case>
+            <use_case>Formulários de busca</use_case>
+            <use_case>Formulários de configuração</use_case>
+          </use_cases>
+        </pattern>
+        
+        <pattern id="react-3" name="Context para Tema">
+          <description>Context para gerenciar tema da aplicação</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              interface Theme {
+                primary: string;
+                secondary: string;
+                background: string;
+                surface: string;
+                text: string;
+                error: string;
+                success: string;
+                warning: string;
+              }
+              
+              const lightTheme: Theme = {
+                primary: '#3b82f6',
+                secondary: '#64748b',
+                background: '#ffffff',
+                surface: '#f8fafc',
+                text: '#1e293b',
+                error: '#ef4444',
+                success: '#10b981',
+                warning: '#f59e0b'
+              };
+              
+              const darkTheme: Theme = {
+                primary: '#60a5fa',
+                secondary: '#94a3b8',
+                background: '#0f172a',
+                surface: '#1e293b',
+                text: '#f1f5f9',
+                error: '#f87171',
+                success: '#34d399',
+                warning: '#fbbf24'
+              };
+              
+              type ThemeMode = 'light' | 'dark';
+              
+              interface ThemeContextType {
+                theme: Theme;
+                mode: ThemeMode;
+                toggleTheme: () => void;
+              }
+              
+              const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+              
+              interface ThemeProviderProps {
+                children: React.ReactNode;
+              }
+              
+              const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
+                const [mode, setMode] = useState<ThemeMode>('light');
+                
+                const toggleTheme = () => {
+                  setMode(prev => prev === 'light' ? 'dark' : 'light');
+                };
+                
+                const theme = mode === 'light' ? lightTheme : darkTheme;
+                
+                return (
+                  <ThemeContext.Provider value={{ theme, mode, toggleTheme }}>
+                    {children}
+                  </ThemeContext.Provider>
+                );
+              };
+              
+              const useTheme = () => {
+                const context = useContext(ThemeContext);
+                if (!context) {
+                  throw new Error('useTheme must be used within a ThemeProvider');
+                }
+                return context;
+              };
+              
+              export { ThemeProvider, useTheme, lightTheme, darkTheme };
+              export type { Theme, ThemeMode };
+              ```
+            </code_example>
+          </implementation>
+          <use_cases>
+            <use_case>Alternância entre temas claro e escuro</use_case>
+            <use_case>Personalização de cores da aplicação</use_case>
+            <use_case>Consistência visual em toda a aplicação</use_case>
+          </use_cases>
+        </pattern>
+        
+        <pattern id="react-4" name="Componente de Loading">
+          <description>Componente para indicar carregamento</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              interface LoadingProps {
+                size?: 'sm' | 'md' | 'lg';
+                color?: string;
+                text?: string;
+                overlay?: boolean;
+              }
+              
+              const Loading: React.FC<LoadingProps> = ({
+                size = 'md',
+                color = '#3b82f6',
+                text,
+                overlay = false
+              }) => {
+                const sizeClasses = {
+                  sm: 'w-4 h-4',
+                  md: 'w-8 h-8',
+                  lg: 'w-12 h-12'
+                };
+                
+                const spinner = (
+                  <div className="flex flex-col items-center justify-center">
+                    <div
+                      className={`animate-spin rounded-full border-2 border-gray-200 border-t-transparent ${sizeClasses[size]}`}
+                      style={{ borderTopColor: color }}
+                    />
+                    {text && (
+                      <p className="mt-2 text-sm text-gray-600">{text}</p>
+                    )}
+                  </div>
+                );
+                
+                if (overlay) {
+                  return (
+                    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+                      {spinner}
+                    </div>
+                  );
+                }
+                
+                return spinner;
+              };
+              
+              export default Loading;
+              ```
+            </code_example>
+          </implementation>
+          <use_cases>
+            <use_case>Carregamento de dados assíncronos</use_case>
+            <use_case>Envio de formulários</use_case>
+            <use_case>Navegação entre páginas</use_case>
+          </use_cases>
+        </pattern>
+      </patterns>
+    </category>
+    
+    <category id="remix-patterns" name="Padrões Remix">
+      <patterns>
+        <pattern id="remix-1" name="Loader com Validação">
+          <description>Padrão para loaders com validação de parâmetros</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              import { json, LoaderFunctionArgs } from '@remix-run/node';
+              import { z } from 'zod';
+              
+              const SearchParamsSchema = z.object({
+                page: z.coerce.number().min(1).default(1),
+                limit: z.coerce.number().min(1).max(100).default(10),
+                query: z.string().optional(),
+                category: z.string().optional(),
+              });
+              
+              type SearchParams = z.infer<typeof SearchParamsSchema>;
+              
+              export const loader = async ({ request }: LoaderFunctionArgs) => {
+                const url = new URL(request.url);
+                const rawParams = Object.fromEntries(url.searchParams);
+                
+                // Validate search params
+                const result = SearchParamsSchema.safeParse(rawParams);
+                
+                if (!result.success) {
+                  return json(
+                    { error: 'Parâmetros inválidos', details: result.error },
+                    { status: 400 }
+                  );
+                }
+                
+                const params = result.data;
+                
+                try {
+                  // Fetch data based on validated params
+                  const data = await fetchData(params);
+                  
+                  return json({
+                    data,
+                    pagination: {
+                      page: params.page,
+                      limit: params.limit,
+                      total: data.total
+                    }
+                  });
+                } catch (error) {
+                  return json(
+                    { error: 'Erro ao carregar dados' },
+                    { status: 500 }
+                  );
+                }
+              };
+              
+              async function fetchData(params: SearchParams) {
+                // Implementation of data fetching
+                return {
+                  items: [],
+                  total: 0
+                };
+              }
+              ```
+            </code_example>
+          </implementation>
+          <use_cases>
+            <use_case>Listas com paginação e filtros</use_case>
+            <use_case>Busca com parâmetros validados</use_case>
+            <use_case>Carregamento de dados com segurança</use_case>
+          </use_cases>
+        </pattern>
+        
+        <pattern id="remix-2" name="Action com Validação">
+          <description>Padrão para actions com validação de dados</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              import { json, ActionFunctionArgs } from '@remix-run/node';
+              import { z } from 'zod';
+              
+              const FormSchema = z.object({
+                name: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
+                email: z.string().email('Email inválido'),
+                message: z.string().min(10, 'Mensagem deve ter pelo menos 10 caracteres'),
+              });
+              
+              type FormData = z.infer<typeof FormSchema>;
+              
+              export const action = async ({ request }: ActionFunctionArgs) => {
+                const formData = await request.formData();
+                const rawData = Object.fromEntries(formData);
+                
+                // Validate form data
+                const result = FormSchema.safeParse(rawData);
+                
+                if (!result.success) {
+                  return json(
+                    { 
+                      error: 'Dados inválidos', 
+                      fieldErrors: result.error.flatten().fieldErrors 
+                    },
+                    { status: 400 }
+                  );
+                }
+                
+                const data = result.data;
+                
+                try {
+                  // Process form data
+                  const record = await createRecord(data);
+                  
+                  return json({ 
+                    success: true, 
+                    record 
+                  });
+                } catch (error) {
+                  return json(
+                    { error: 'Erro ao processar formulário' },
+                    { status: 500 }
+                  );
+                }
+              };
+              
+              async function createRecord(data: FormData) {
+                // Implementation of record creation
+                return {
+                  id: '1',
+                  ...data,
+                  createdAt: new Date()
+                };
+              }
+              ```
+            </code_example>
+          </implementation>
+          <use_cases>
+            <use_case>Processamento de formulários</use_case>
+            <use_case>Criação de registros</use_case>
+            <use_case>Atualização de dados</use_case>
+          </use_cases>
+        </pattern>
+        
+        <pattern id="remix-3" name="Rota com Autenticação">
+          <description>Padrão para rotas protegidas com autenticação</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              import { json, LoaderFunctionArgs, redirect } from '@remix-run/node';
+              import { getSession } from '~/sessions';
+              
+              export const loader = async ({ request }: LoaderFunctionArgs) => {
+                const session = await getSession(request.headers.get('Cookie'));
+                
+                if (!session.has('userId')) {
+                  // Redirect to login if not authenticated
+                  return redirect('/login?redirectTo=' + encodeURIComponent(request.url));
+                }
+                
+                const userId = session.get('userId');
+                
+                try {
+                  // Fetch user data
+                  const user = await getUserById(userId);
+                  
+                  if (!user) {
+                    // Clear session if user not found
+                    return redirect('/login', {
+                      headers: {
+                        'Set-Cookie': await destroySession(session),
+                      },
+                    });
+                  }
+                  
+                  return json({ user });
+                } catch (error) {
+                  return json(
+                    { error: 'Erro ao carregar dados do usuário' },
+                    { status: 500 }
+                  );
+                }
+              };
+              
+              async function getUserById(id: string) {
+                // Implementation of user fetching
+                return {
+                  id,
+                  name: 'User',
+                  email: 'user@example.com'
+                };
+              }
+              ```
+            </code_example>
+          </implementation>
+          <use_cases>
+            <use_case>Áreas restritas da aplicação</use_case>
+            <use_case>Páginas de perfil do usuário</use_case>
+            <use_case>Dashboard administrativo</use_case>
+          </use_cases>
+        </pattern>
+        
+        <pattern id="remix-4" name="Tratamento de Erros">
+          <description>Padrão para tratamento de erros em rotas</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              import { json, LoaderFunctionArgs } from '@remix-run/node';
+              import { isRouteErrorResponse, useRouteError } from '@remix-run/react';
+              
+              export const loader = async ({ request }: LoaderFunctionArgs) => {
+                try {
+                  const data = await fetchData();
+                  return json({ data });
+                } catch (error) {
+                  // Handle different types of errors
+                  if (error instanceof NotFoundError) {
+                    throw json(
+                      { message: 'Recurso não encontrado' },
+                      { status: 404 }
+                    );
+                  }
+                  
+                  if (error instanceof UnauthorizedError) {
+                    throw json(
+                      { message: 'Não autorizado' },
+                      { status: 403 }
+                    );
+                  }
+                  
+                  // Generic server error
+                  throw json(
+                    { message: 'Erro interno do servidor' },
+                    { status: 500 }
+                  );
+                }
+              };
+              
+              // Error boundary component
+              export function ErrorBoundary() {
+                const error = useRouteError();
+                
+                if (isRouteErrorResponse(error)) {
+                  return (
+                    <div className="error-container">
+                      <h1>{error.status} {error.statusText}</h1>
+                      <p>{error.data.message}</p>
+                    </div>
+                  );
+                }
+                
+                return (
+                  <div className="error-container">
+                    <h1>Erro inesperado</h1>
+                    <p>Ocorreu um erro inesperado. Tente novamente mais tarde.</p>
+                  </div>
+                );
+              }
+              
+              // Custom error classes
+              class NotFoundError extends Error {}
+              class UnauthorizedError extends Error {}
+              
+              async function fetchData() {
+                // Implementation that might throw errors
+                throw new NotFoundError();
+              }
+              ```
+            </code_example>
+          </implementation>
+          <use_cases>
+            <use_case>Tratamento de erros em loaders</use_case>
+            <use_case>Tratamento de erros em actions</use_case>
+            <use_case>Exibição amigável de erros para usuários</use_case>
+          </use_cases>
+        </pattern>
+      </patterns>
+    </category>
+    
+    <category id="file-patterns" name="Padrões de Arquivo">
+      <patterns>
+        <pattern id="file-1" name="Leitura Segura de Arquivo">
+          <description>Padrão para leitura segura de arquivos</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              import { promises as fs } from 'fs';
+              import path from 'path';
+              
+              interface ReadFileOptions {
+                encoding?: BufferEncoding;
+                fallback?: string;
+              }
+              
+              async function safeReadFile(
+                filePath: string, 
+                options: ReadFileOptions = {}
+              ): Promise<string> {
+                const { encoding = 'utf8', fallback = '' } = options;
+                
+                try {
+                  // Resolve absolute path
+                  const absolutePath = path.resolve(filePath);
+                  
+                  // Check if file exists
+                  await fs.access(absolutePath);
+                  
+                  // Read file
+                  const content = await fs.readFile(absolutePath, encoding);
+                  
+                  return content;
+                } catch (error) {
+                  // Handle different error types
+                  if (error.code === 'ENOENT') {
+                    console.warn(`File not found: ${filePath}`);
+                    return fallback;
+                  }
+                  
+                  if (error.code === 'EACCES') {
+                    console.error(`Permission denied: ${filePath}`);
+                    throw new Error(`Permission denied: ${filePath}`);
+                  }
+                  
+                  // Generic error
+                  console.error(`Error reading file ${filePath}:`, error);
+                  throw new Error(`Failed to read file: ${filePath}`);
+                }
+              }
+              
+              export default safeReadFile;
+              ```
+            </code_example>
+          </implementation>
+          <use_cases>
+            <use_case>Leitura de arquivos de configuração</use_case>
+            <use_case>Carregamento de templates</use_case>
+            <use_case>Leitura de dados estáticos</use_case>
+          </use_cases>
+        </pattern>
+        
+        <pattern id="file-2" name="Escrita Segura de Arquivo">
+          <description>Padrão para escrita segura de arquivos</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              import { promises as fs } from 'fs';
+              import path from 'path';
+              
+              interface WriteFileOptions {
+                encoding?: BufferEncoding;
+                createBackup?: boolean;
+              }
+              
+              async function safeWriteFile(
+                filePath: string, 
+                content: string, 
+                options: WriteFileOptions = {}
+              ): Promise<void> {
+                const { encoding = 'utf8', createBackup = true } = options;
+                
+                try {
+                  // Resolve absolute path
+                  const absolutePath = path.resolve(filePath);
+                  
+                  // Ensure directory exists
+                  const dir = path.dirname(absolutePath);
+                  await fs.mkdir(dir, { recursive: true });
+                  
+                  // Create backup if file exists
+                  if (createBackup) {
+                    try {
+                      await fs.access(absolutePath);
+                      const backupPath = `${absolutePath}.backup`;
+                      await fs.copyFile(absolutePath, backupPath);
+                    } catch (error) {
+                      // File doesn't exist, no need to backup
+                      if (error.code !== 'ENOENT') {
+                        throw error;
+                      }
+                    }
+                  }
+                  
+                  // Write file
+                  await fs.writeFile(absolutePath, content, encoding);
+                } catch (error) {
+                  console.error(`Error writing file ${filePath}:`, error);
+                  throw new Error(`Failed to write file: ${filePath}`);
+                }
+              }
+              
+              export default safeWriteFile;
+              ```
+            </code_example>
+          </implementation>
+          <use_cases>
+            <use_case>Salvamento de arquivos de configuração</use_case>
+            <use_case>Geração de relatórios</use_case>
+            <use_case>Atualização de dados estáticos</use_case>
+          </use_cases>
+        </pattern>
+        
+        <pattern id="file-3" name="Gerenciamento de Diretórios">
+          <description>Padrão para gerenciamento de diretórios</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              import { promises as fs } from 'fs';
+              import path from 'path';
+              
+              interface DirectoryOptions {
+                recursive?: boolean;
+                clean?: boolean;
+              }
+              
+              async function ensureDirectory(
+                dirPath: string, 
+                options: DirectoryOptions = {}
+              ): Promise<void> {
+                const { recursive = true, clean = false } = options;
+                
+                try {
+                  // Resolve absolute path
+                  const absolutePath = path.resolve(dirPath);
+                  
+                  if (clean) {
+                    // Remove directory if it exists
+                    try {
+                      await fs.access(absolutePath);
+                      await fs.rm(absolutePath, { recursive: true });
+                    } catch (error) {
+                      // Directory doesn't exist, no need to remove
+                      if (error.code !== 'ENOENT') {
+                        throw error;
+                      }
+                    }
+                  }
+                  
+                  // Create directory
+                  await fs.mkdir(absolutePath, { recursive });
+                } catch (error) {
+                  console.error(`Error managing directory ${dirPath}:`, error);
+                  throw new Error(`Failed to manage directory: ${dirPath}`);
+                }
+              }
+              
+              async function listFiles(
+                dirPath: string, 
+                recursive = false
+              ): Promise<string[]> {
+                try {
+                  // Resolve absolute path
+                  const absolutePath = path.resolve(dirPath);
+                  
+                  // Check if directory exists
+                  await fs.access(absolutePath);
+                  
+                  // Read directory
+                  const entries = await fs.readdir(absolutePath, { withFileTypes: true });
+                  
+                  let files: string[] = [];
+                  
+                  for (const entry of entries) {
+                    const fullPath = path.join(absolutePath, entry.name);
+                    
+                    if (entry.isFile()) {
+                      files.push(fullPath);
+                    } else if (entry.isDirectory() && recursive) {
+                      const subFiles = await listFiles(fullPath, recursive);
+                      files = files.concat(subFiles);
+                    }
+                  }
+                  
+                  return files;
+                } catch (error) {
+                  console.error(`Error listing files in ${dirPath}:`, error);
+                  throw new Error(`Failed to list files: ${dirPath}`);
+                }
+              }
+              
+              export { ensureDirectory, listFiles };
+              ```
+            </code_example>
+          </implementation>
+          <use_cases>
+            <use_case>Criação de estrutura de diretórios</use_case>
+            <use_case>Organização de arquivos</use_case>
+            <use_case>Limpeza de diretórios temporários</use_case>
+          </use_cases>
+        </pattern>
+        
+        <pattern id="file-4" name="Manipulação de JSON">
+          <description>Padrão para manipulação segura de arquivos JSON</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              import { promises as fs } from 'fs';
+              import path from 'path';
+              
+              interface JsonFileOptions {
+                encoding?: BufferEncoding;
+                createBackup?: boolean;
+                spaces?: number;
+              }
+              
+              async function readJsonFile<T>(
+                filePath: string, 
+                options: JsonFileOptions = {}
+              ): Promise<T> {
+                const { encoding = 'utf8' } = options;
+                
+                try {
+                  // Resolve absolute path
+                  const absolutePath = path.resolve(filePath);
+                  
+                  // Check if file exists
+                  await fs.access(absolutePath);
+                  
+                  // Read file
+                  const content = await fs.readFile(absolutePath, encoding);
+                  
+                  // Parse JSON
+                  return JSON.parse(content) as T;
+                } catch (error) {
+                  if (error.code === 'ENOENT') {
+                    throw new Error(`File not found: ${filePath}`);
+                  }
+                  
+                  if (error instanceof SyntaxError) {
+                    throw new Error(`Invalid JSON in file: ${filePath}`);
+                  }
+                  
+                  console.error(`Error reading JSON file ${filePath}:`, error);
+                  throw new Error(`Failed to read JSON file: ${filePath}`);
+                }
+              }
+              
+              async function writeJsonFile<T>(
+                filePath: string, 
+                data: T, 
+                options: JsonFileOptions = {}
+              ): Promise<void> {
+                const { 
+                  encoding = 'utf8', 
+                  createBackup = true,
+                  spaces = 2 
+                } = options;
+                
+                try {
+                  // Resolve absolute path
+                  const absolutePath = path.resolve(filePath);
+                  
+                  // Ensure directory exists
+                  const dir = path.dirname(absolutePath);
+                  await fs.mkdir(dir, { recursive: true });
+                  
+                  // Create backup if file exists
+                  if (createBackup) {
+                    try {
+                      await fs.access(absolutePath);
+                      const backupPath = `${absolutePath}.backup`;
+                      await fs.copyFile(absolutePath, backupPath);
+                    } catch (error) {
+                      // File doesn't exist, no need to backup
+                      if (error.code !== 'ENOENT') {
+                        throw error;
+                      }
+                    }
+                  }
+                  
+                  // Stringify JSON
+                  const content = JSON.stringify(data, null, spaces);
+                  
+                  // Write file
+                  await fs.writeFile(absolutePath, content, encoding);
+                } catch (error) {
+                  console.error(`Error writing JSON file ${filePath}:`, error);
+                  throw new Error(`Failed to write JSON file: ${filePath}`);
+                }
+              }
+              
+              export { readJsonFile, writeJsonFile };
+              ```
+            </code_example>
+          </implementation>
+          <use_cases>
+            <use_case>Manipulação de arquivos de configuração</use_case>
+            <use_case>Armazenamento de dados estruturados</use_case>
+            <use_case>Cache de dados</use_case>
+          </use_cases>
+        </pattern>
+      </patterns>
+    </category>
+    
+    <category id="task-patterns" name="Padrões de Tarefas">
+      <patterns>
+        <pattern id="task-1" name="Gerenciador de Tarefas">
+          <description>Padrão para gerenciamento de listas de tarefas</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              interface Task {
+                id: string;
+                title: string;
+                description?: string;
+                completed: boolean;
+                priority: 'low' | 'medium' | 'high';
+                createdAt: Date;
+                updatedAt: Date;
+                dueDate?: Date;
+                tags?: string[];
+              }
+              
+              interface TaskManagerOptions {
+                storageKey?: string;
+                autoSave?: boolean;
+              }
+              
+              class TaskManager {
+                private tasks: Task[] = [];
+                private storageKey: string;
+                private autoSave: boolean;
+                private listeners: Set<() => void> = new Set();
+                
+                constructor(options: TaskManagerOptions = {}) {
+                  this.storageKey = options.storageKey || 'tasks';
+                  this.autoSave = options.autoSave !== false;
+                  
+                  // Load tasks from storage
+                  this.loadTasks();
+                }
+                
+                private loadTasks(): void {
+                  try {
+                    const stored = localStorage.getItem(this.storageKey);
+                    if (stored) {
+                      const parsed = JSON.parse(stored);
+                      this.tasks = parsed.map((task: any) => ({
+                        ...task,
+                        createdAt: new Date(task.createdAt),
+                        updatedAt: new Date(task.updatedAt),
+                        dueDate: task.dueDate ? new Date(task.dueDate) : undefined
+                      }));
+                    }
+                  } catch (error) {
+                    console.error('Error loading tasks:', error);
+                    this.tasks = [];
+                  }
+                }
+                
+                private saveTasks(): void {
+                  if (this.autoSave) {
+                    try {
+                      localStorage.setItem(this.storageKey, JSON.stringify(this.tasks));
+                    } catch (error) {
+                      console.error('Error saving tasks:', error);
+                    }
+                  }
+                }
+                
+                private notifyListeners(): void {
+                  this.listeners.forEach(listener => listener());
+                }
+                
+                subscribe(listener: () => void): () => void {
+                  this.listeners.add(listener);
+                  return () => this.listeners.delete(listener);
+                }
+                
+                getTasks(): Task[] {
+                  return [...this.tasks];
+                }
+                
+                getTaskById(id: string): Task | undefined {
+                  return this.tasks.find(task => task.id === id);
+                }
+                
+                addTask(task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Task {
+                  const newTask: Task = {
+                    ...task,
+                    id: this.generateId(),
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                  };
+                  
+                  this.tasks.push(newTask);
+                  this.saveTasks();
+                  this.notifyListeners();
+                  
+                  return newTask;
+                }
+                
+                updateTask(id: string, updates: Partial<Omit<Task, 'id' | 'createdAt'>>): Task | null {
+                  const taskIndex = this.tasks.findIndex(task => task.id === id);
+                  
+                  if (taskIndex === -1) {
+                    return null;
+                  }
+                  
+                  this.tasks[taskIndex] = {
+                    ...this.tasks[taskIndex],
+                    ...updates,
+                    updatedAt: new Date()
+                  };
+                  
+                  this.saveTasks();
+                  this.notifyListeners();
+                  
+                  return this.tasks[taskIndex];
+                }
+                
+                deleteTask(id: string): boolean {
+                  const taskIndex = this.tasks.findIndex(task => task.id === id);
+                  
+                  if (taskIndex === -1) {
+                    return false;
+                  }
+                  
+                  this.tasks.splice(taskIndex, 1);
+                  this.saveTasks();
+                  this.notifyListeners();
+                  
+                  return true;
+                }
+                
+                toggleTask(id: string): Task | null {
+                  const task = this.getTaskById(id);
+                  
+                  if (!task) {
+                    return null;
+                  }
+                  
+                  return this.updateTask(id, { completed: !task.completed });
+                }
+                
+                filterTasks(filter: (task: Task) => boolean): Task[] {
+                  return this.tasks.filter(filter);
+                }
+                
+                sortTasks(comparator: (a: Task, b: Task) => number): Task[] {
+                  return [...this.tasks].sort(comparator);
+                }
+                
+                private generateId(): string {
+                  return Math.random().toString(36).substr(2, 9);
+                }
+              }
+              
+              export default TaskManager;
+              export type { Task };
+              ```
+            </code_example>
+          </implementation>
+          <use_cases>
+            <use_case>Listas de tarefas pessoais</use_case>
+            <use_case>Gerenciamento de projetos</use_case>
+            <use_case>Controle de atividades</use_case>
+          </use_cases>
+        </pattern>
+        
+        <pattern id="task-2" name="Hook para Tarefas">
+          <description>Hook personalizado para gerenciar tarefas</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              import { useState, useEffect, useCallback } from 'react';
+              import TaskManager, { Task } from './TaskManager';
+              
+              interface UseTasksOptions {
+                storageKey?: string;
+                autoSave?: boolean;
+              }
+              
+              function useTasks(options: UseTasksOptions = {}) {
+                const [taskManager] = useState(() => new TaskManager(options));
+                const [tasks, setTasks] = useState<Task[]>(taskManager.getTasks());
+                
+                useEffect(() => {
+                  const unsubscribe = taskManager.subscribe(() => {
+                    setTasks(taskManager.getTasks());
+                  });
+                  
+                  return unsubscribe;
+                }, [taskManager]);
+                
+                const addTask = useCallback((task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
+                  return taskManager.addTask(task);
+                }, [taskManager]);
+                
+                const updateTask = useCallback((id: string, updates: Partial<Omit<Task, 'id' | 'createdAt'>>) => {
+                  return taskManager.updateTask(id, updates);
+                }, [taskManager]);
+                
+                const deleteTask = useCallback((id: string) => {
+                  return taskManager.deleteTask(id);
+                }, [taskManager]);
+                
+                const toggleTask = useCallback((id: string) => {
+                  return taskManager.toggleTask(id);
+                }, [taskManager]);
+                
+                const filterTasks = useCallback((filter: (task: Task) => boolean) => {
+                  return taskManager.filterTasks(filter);
+                }, [taskManager]);
+                
+                const sortTasks = useCallback((comparator: (a: Task, b: Task) => number) => {
+                  return taskManager.sortTasks(comparator);
+                }, [taskManager]);
+                
+                return {
+                  tasks,
+                  addTask,
+                  updateTask,
+                  deleteTask,
+                  toggleTask,
+                  filterTasks,
+                  sortTasks
+                };
+              }
+              
+              export default useTasks;
+              ```
+            </code_example>
+          </implementation>
+          <use_cases>
+            <use_case>Componentes React com listas de tarefas</use_case>
+            <use_case>Gerenciamento de estado de tarefas</use_case>
+            <use_case>Integração com UI de tarefas</use_case>
+          </use_cases>
+        </pattern>
+        
+        <pattern id="task-3" name="Validação de Tarefas">
+          <description>Padrão para validação de tarefas</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              interface TaskValidationError {
+                field: string;
+                message: string;
+              }
+              
+              interface TaskValidationResult {
+                isValid: boolean;
+                errors: TaskValidationError[];
+              }
+              
+              function validateTask(task: Partial<Omit<Task, 'id' | 'createdAt' | 'updatedAt'>>): TaskValidationResult {
+                const errors: TaskValidationError[] = [];
+                
+                // Validate title
+                if (!task.title || task.title.trim() === '') {
+                  errors.push({
+                    field: 'title',
+                    message: 'Título é obrigatório'
+                  });
+                } else if (task.title.length > 100) {
+                  errors.push({
+                    field: 'title',
+                    message: 'Título deve ter no máximo 100 caracteres'
+                  });
+                }
+                
+                // Validate description
+                if (task.description && task.description.length > 500) {
+                  errors.push({
+                    field: 'description',
+                    message: 'Descrição deve ter no máximo 500 caracteres'
+                  });
+                }
+                
+                // Validate due date
+                if (task.dueDate && task.dueDate < new Date()) {
+                  errors.push({
+                    field: 'dueDate',
+                    message: 'Data de vencimento não pode ser no passado'
+                  });
+                }
+                
+                // Validate tags
+                if (task.tags) {
+                  if (task.tags.length > 10) {
+                    errors.push({
+                      field: 'tags',
+                      message: 'Máximo de 10 tags permitidas'
+                    });
+                  }
+                  
+                  const invalidTags = task.tags.filter(tag => tag.length > 20);
+                  if (invalidTags.length > 0) {
+                    errors.push({
+                      field: 'tags',
+                      message: 'Tags devem ter no máximo 20 caracteres'
+                    });
+                  }
+                }
+                
+                return {
+                  isValid: errors.length === 0,
+                  errors
+                };
+              }
+              
+              export default validateTask;
+              export type { TaskValidationError, TaskValidationResult };
+              ```
+            </code_example>
+          </implementation>
+          <use_cases>
+            <use_case>Validação de formulários de tarefas</use_case>
+            <use_case>Validação de dados de API</use_case>
+            <use_case>Validação de importação de tarefas</use_case>
+          </use_cases>
+        </pattern>
+        
+        <pattern id="task-4" name="Filtros e Ordenação">
+          <description>Padrão para filtros e ordenação de tarefas</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              interface TaskFilterOptions {
+                completed?: boolean;
+                priority?: 'low' | 'medium' | 'high';
+                tags?: string[];
+                dueBefore?: Date;
+                dueAfter?: Date;
+              }
+              
+              interface TaskSortOptions {
+                field: 'createdAt' | 'updatedAt' | 'dueDate' | 'priority' | 'title';
+                direction: 'asc' | 'desc';
+              }
+              
+              function createTaskFilter(options: TaskFilterOptions) {
+                return (task: Task): boolean => {
+                  // Filter by completion status
+                  if (options.completed !== undefined && task.completed !== options.completed) {
+                    return false;
+                  }
+                  
+                  // Filter by priority
+                  if (options.priority && task.priority !== options.priority) {
+                    return false;
+                  }
+                  
+                  // Filter by tags
+                  if (options.tags && options.tags.length > 0) {
+                    const taskTags = task.tags || [];
+                    const hasAllTags = options.tags.every(tag => taskTags.includes(tag));
+                    if (!hasAllTags) {
+                      return false;
+                    }
+                  }
+                  
+                  // Filter by due date before
+                  if (options.dueBefore && task.dueDate && task.dueDate > options.dueBefore) {
+                    return false;
+                  }
+                  
+                  // Filter by due date after
+                  if (options.dueAfter && task.dueDate && task.dueDate < options.dueAfter) {
+                    return false;
+                  }
+                  
+                  return true;
+                };
+              }
+              
+              function createTaskSorter(options: TaskSortOptions) {
+                return (a: Task, b: Task): number => {
+                  let valueA: any;
+                  let valueB: any;
+                  
+                  // Get values based on field
+                  switch (options.field) {
+                    case 'createdAt':
+                      valueA = a.createdAt.getTime();
+                      valueB = b.createdAt.getTime();
+                      break;
+                    case 'updatedAt':
+                      valueA = a.updatedAt.getTime();
+                      valueB = b.updatedAt.getTime();
+                      break;
+                    case 'dueDate':
+                      valueA = a.dueDate ? a.dueDate.getTime() : Infinity;
+                      valueB = b.dueDate ? b.dueDate.getTime() : Infinity;
+                      break;
+                    case 'priority':
+                      const priorityOrder = { 'high': 3, 'medium': 2, 'low': 1 };
+                      valueA = priorityOrder[a.priority];
+                      valueB = priorityOrder[b.priority];
+                      break;
+                    case 'title':
+                      valueA = a.title.toLowerCase();
+                      valueB = b.title.toLowerCase();
+                      break;
+                    default:
+                      return 0;
+                  }
+                  
+                  // Compare values
+                  if (valueA < valueB) {
+                    return options.direction === 'asc' ? -1 : 1;
+                  }
+                  
+                  if (valueA > valueB) {
+                    return options.direction === 'asc' ? 1 : -1;
+                  }
+                  
+                  return 0;
+                };
+              }
+              
+              export { createTaskFilter, createTaskSorter };
+              export type { TaskFilterOptions, TaskSortOptions };
+              ```
+            </code_example>
+          </implementation>
+          <use_cases>
+            <use_case>Filtragem de listas de tarefas</use_case>
+            <use_case>Ordenação de tarefas por prioridade</use_case>
+            <use_case>Busca de tarefas por tags</use_case>
+          </use_cases>
+        </pattern>
+      </patterns>
+    </category>
+  </categories>
+</common_patterns>

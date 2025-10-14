@@ -1,0 +1,198 @@
+<tool_usage_guide>
+  <overview>
+    Este documento fornece orientações específicas sobre o uso eficiente das ferramentas
+    disponíveis para o modo Tech Problem Solver, com foco em diagnóstico rápido e
+    resolução ágil de problemas técnicos.
+  </overview>
+
+  <tool_priorities>
+    <priority level="1">
+      <tool>codebase_search</tool>
+      <when>Sempre usar primeiro para encontrar código relevante relacionado ao problema</when>
+      <why>A busca semântica encontra funcionalidades melhor que buscas por palavras-chave</why>
+    </priority>
+    <priority level="2">
+      <tool>read_file</tool>
+      <when>Após identificar arquivos com codebase_search</when>
+      <why>Obter contexto completo das implementações para entender o problema</why>
+    </priority>
+    <priority level="3">
+      <tool>list_files</tool>
+      <when>Para entender a estrutura do projeto e localizar arquivos específicos</when>
+      <why>Fornece uma visão geral da organização do código e dependências</why>
+    </priority>
+    <priority level="4">
+      <tool>apply_diff</tool>
+      <when>Para implementar correções e melhorias de forma precisa</when>
+      <why>Permite modificações cirúrgicas no código sem risco de alterações indesejadas</why>
+    </priority>
+    <priority level="5">
+      <tool>write_to_file</tool>
+      <when>Para criar novos arquivos ou substituir completamente arquivos existentes</when>
+      <why>Útil para criar novos componentes, páginas ou arquivos de configuração</why>
+    </priority>
+  </tool_priorities>
+
+  <tool_specific_guidance>
+    <tool name="codebase_search">
+      <best_practices>
+        <practice>Use consultas específicas e direcionadas ao problema</practice>
+        <practice>Combine termos técnicos com termos de domínio da aplicação</practice>
+        <practice>Se a primeira busca não retornar resultados úteis, refine com termos mais específicos</practice>
+        <practice>Use buscas semânticas para encontrar funcionalidades relacionadas, não apenas termos exatos</practice>
+      </best_practices>
+      <example>
+        <scenario>Problema com autenticação do Supabase</scenario>
+        <query>autenticação Supabase login sessão</query>
+        <alternative_query>supabase auth context provider</alternative_query>
+      </example>
+      <example>
+        <scenario>Erro de roteamento no React Router v7</scenario>
+        <query>React Router v7 nested routes error</query>
+        <alternative_query>router createBrowserRouter loader error</alternative_query>
+      </example>
+    </tool>
+
+    <tool name="read_file">
+      <best_practices>
+        <practice>Leia sempre o arquivo completo antes de fazer modificações</practice>
+        <practice>Preste atenção a imports, dependências e padrões de código existentes</practice>
+        <practice>Identifique pontos de integração com outros componentes ou sistemas</practice>
+        <practice>Observe a estrutura de pastas para entender a organização do projeto</practice>
+      </best_practices>
+      <example>
+        <scenario>Analisando um componente de UI</scenario>
+        <approach>
+          <![CDATA[
+// 1. Ler o arquivo completo para entender a estrutura
+read_file('src/components/UserProfile.tsx')
+
+// 2. Identificar dependências e imports
+// 3. Verificar como o componente se integra com outros
+// 4. Entender o fluxo de dados e eventos
+          ]]>
+        </approach>
+      </example>
+    </tool>
+
+    <tool name="apply_diff">
+      <best_practices>
+        <practice>Sempre leia o arquivo primeiro para garantir correspondência exata do conteúdo</practice>
+        <practice>Inclua números de linha para maior precisão nas modificações</practice>
+        <practice>Faça múltiplas alterações em um único diff quando possível</practice>
+        <practice>Seja específico e preciso para evitar alterações indesejadas</practice>
+        <practice>Teste mentalmente as alterações antes de aplicá-las</practice>
+      </best_practices>
+      <example>
+        <scenario>Corrigindo um erro de autenticação</scenario>
+        <code>
+          <![CDATA[
+<apply_diff>
+<path>src/auth/AuthProvider.tsx</path>
+<diff>
+<<<<<<< SEARCH
+:start_line:45
+-------
+const { data: { session } } = await supabase.auth.getSession();
+setSession(session);
+=======
+const { data: { session }, error } = await supabase.auth.getSession();
+if (error) {
+  console.error('Erro ao obter sessão:', error);
+  return;
+}
+setSession(session);
+>>>>>>> REPLACE
+</diff>
+</apply_diff>
+          ]]>
+        </code>
+      </example>
+      <example>
+        <scenario>Adicionando tratamento de erro a uma rota</scenario>
+        <code>
+          <![CDATA[
+<apply_diff>
+<path>app/routes/dashboard.tsx</path>
+<diff>
+<<<<<<< SEARCH
+:start_line:12
+-------
+export async function loader() {
+  const response = await fetch('/api/dashboard');
+  return response.json();
+}
+=======
+export async function loader() {
+  try {
+    const response = await fetch('/api/dashboard');
+    if (!response.ok) {
+      throw new Response('Dados não encontrados', { status: 404 });
+    }
+    return response.json();
+  } catch (error) {
+    console.error('Erro ao carregar dashboard:', error);
+    throw error;
+  }
+}
+>>>>>>> REPLACE
+</diff>
+</apply_diff>
+          ]]>
+        </code>
+      </example>
+    </tool>
+
+    <tool name="write_to_file">
+      <best_practices>
+        <practice>Use para criar novos arquivos ou substituir completamente arquivos existentes</practice>
+        <practice>Verifique se o diretório de destino existe antes de criar o arquivo</practice>
+        <practice>Siga os padrões de nomenclatura e estrutura do projeto</practice>
+        <practice>Inclua imports necessários e documentação básica</practice>
+      </best_practices>
+      <example>
+        <scenario>Criando um novo componente de UI</scenario>
+        <code>
+          <![CDATA[
+<write_to_file>
+<path>src/components/ui/LoadingSpinner.tsx</path>
+<content>
+import React from 'react';
+
+interface LoadingSpinnerProps {
+  size?: 'sm' | 'md' | 'lg';
+  className?: string;
+}
+
+export function LoadingSpinner({ size = 'md', className = '' }: LoadingSpinnerProps) {
+  const sizeClasses = {
+    sm: 'w-4 h-4',
+    md: 'w-8 h-8',
+    lg: 'w-12 h-12'
+  };
+
+  return (
+    <div className={`flex justify-center items-center ${className}`}>
+      <svg 
+        className={`animate-spin ${sizeClasses[size]} text-blue-600`} 
+        xmlns="http://www.w3.org/2000/svg" 
+        fill="none" 
+        viewBox="0 0 24 24"
+      >
+        <circle 
+          className="opacity-25" 
+          cx="12" 
+          cy="12" 
+          r="10" 
+          stroke="currentColor" 
+          strokeWidth="4"
+        ></circle>
+        <path 
+          className="opacity-75" 
+          fill="currentColor" 
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
+      </svg>
+    </div>
+  );
+}

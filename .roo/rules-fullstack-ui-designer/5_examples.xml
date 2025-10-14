@@ -1,0 +1,3994 @@
+<examples>
+  <name>Full-Stack UI Designer Examples</name>
+  <description>Exemplos práticos para desenvolvimento full-stack e design de UI com React/Remix</description>
+  
+  <categories>
+    <category id="ui-examples" name="Exemplos de UI">
+      <examples>
+        <example id="ui-1" name="Dashboard com Cards">
+          <description>Exemplo de dashboard com componentes de card reutilizáveis</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              // app/components/Dashboard.tsx
+              import React, { useState, useEffect } from 'react';
+              import Card from './Card';
+              import Loading from './Loading';
+              import { useApi } from '../hooks/useApi';
+              
+              interface DashboardData {
+                totalUsers: number;
+                activeUsers: number;
+                revenue: number;
+                conversionRate: number;
+              }
+              
+              const Dashboard: React.FC = () => {
+                const { data, loading, error } = useApi<DashboardData>({
+                  url: '/api/dashboard',
+                  immediate: true
+                });
+                
+                if (loading) return <Loading overlay={false} text="Carregando dashboard..." />;
+                if (error) return <div>Erro ao carregar dashboard: {error.message}</div>;
+                if (!data) return <div>Nenhum dado disponível</div>;
+                
+                return (
+                  <div className="space-y-6">
+                    <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                      <Card 
+                        title="Total de Usuários" 
+                        className="border-l-4 border-blue-500"
+                      >
+                        <div className="text-3xl font-bold">{data.totalUsers.toLocaleString()}</div>
+                        <div className="text-sm text-gray-500 mt-1">Cadastrados no sistema</div>
+                      </Card>
+                      
+                      <Card 
+                        title="Usuários Ativos" 
+                        className="border-l-4 border-green-500"
+                      >
+                        <div className="text-3xl font-bold">{data.activeUsers.toLocaleString()}</div>
+                        <div className="text-sm text-gray-500 mt-1">Nos últimos 30 dias</div>
+                      </Card>
+                      
+                      <Card 
+                        title="Receita" 
+                        className="border-l-4 border-yellow-500"
+                      >
+                        <div className="text-3xl font-bold">
+                          {new Intl.NumberFormat('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL'
+                          }).format(data.revenue)}
+                        </div>
+                        <div className="text-sm text-gray-500 mt-1">Mês atual</div>
+                      </Card>
+                      
+                      <Card 
+                        title="Taxa de Conversão" 
+                        className="border-l-4 border-purple-500"
+                      >
+                        <div className="text-3xl font-bold">{(data.conversionRate * 100).toFixed(1)}%</div>
+                        <div className="text-sm text-gray-500 mt-1">Visitantes para clientes</div>
+                      </Card>
+                    </div>
+                  </div>
+                );
+              };
+              
+              export default Dashboard;
+              ```
+            </code_example>
+          </implementation>
+          <key_points>
+            <point>Uso de componentes reutilizáveis (Card, Loading)</point>
+            <point>Gerenciamento de estado com hook personalizado (useApi)</point>
+            <point>Layout responsivo com grid system</point>
+            <point>Tratamento adequado de estados de carregamento e erro</point>
+            <point>Formatação de dados para exibição (números, moeda)</point>
+          </key_points>
+        </example>
+        
+        <example id="ui-2" name="Formulário de Cadastro com Validação">
+          <description>Exemplo de formulário de cadastro com validação em tempo real</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              // app/components/SignupForm.tsx
+              import React, { useState } from 'react';
+              import { useForm } from '../hooks/useForm';
+              import Button from './Button';
+              import Input from './Input';
+              
+              interface SignupFormData {
+                name: string;
+                email: string;
+                password: string;
+                confirmPassword: string;
+                acceptTerms: boolean;
+              }
+              
+              const SignupForm: React.FC = () => {
+                const [isSubmitting, setIsSubmitting] = useState(false);
+                const [submitSuccess, setSubmitSuccess] = useState(false);
+                const [submitError, setSubmitError] = useState<string | null>(null);
+                
+                const validation = (values: SignupFormData) => {
+                  const errors: Partial<Record<keyof SignupFormData, string>> = {};
+                  
+                  if (!values.name.trim()) {
+                    errors.name = 'Nome é obrigatório';
+                  } else if (values.name.length < 3) {
+                    errors.name = 'Nome deve ter pelo menos 3 caracteres';
+                  }
+                  
+                  if (!values.email.trim()) {
+                    errors.email = 'Email é obrigatório';
+                  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
+                    errors.email = 'Email inválido';
+                  }
+                  
+                  if (!values.password) {
+                    errors.password = 'Senha é obrigatória';
+                  } else if (values.password.length < 8) {
+                    errors.password = 'Senha deve ter pelo menos 8 caracteres';
+                  } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(values.password)) {
+                    errors.password = 'Senha deve conter letras maiúsculas, minúsculas e números';
+                  }
+                  
+                  if (values.password !== values.confirmPassword) {
+                    errors.confirmPassword = 'Senhas não coincidem';
+                  }
+                  
+                  if (!values.acceptTerms) {
+                    errors.acceptTerms = 'Você deve aceitar os termos de uso';
+                  }
+                  
+                  return errors;
+                };
+                
+                const handleSubmit = async (values: SignupFormData) => {
+                  setIsSubmitting(true);
+                  setSubmitError(null);
+                  
+                  try {
+                    const response = await fetch('/api/signup', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({
+                        name: values.name,
+                        email: values.email,
+                        password: values.password
+                      })
+                    });
+                    
+                    if (!response.ok) {
+                      const errorData = await response.json();
+                      throw new Error(errorData.message || 'Erro ao criar conta');
+                    }
+                    
+                    setSubmitSuccess(true);
+                  } catch (error) {
+                    setSubmitError(error instanceof Error ? error.message : 'Erro desconhecido');
+                  } finally {
+                    setIsSubmitting(false);
+                  }
+                };
+                
+                const {
+                  values,
+                  errors,
+                  touched,
+                  handleChange,
+                  handleBlur,
+                  handleSubmit,
+                  reset
+                } = useForm<SignupFormData>({
+                  initialValues: {
+                    name: '',
+                    email: '',
+                    password: '',
+                    confirmPassword: '',
+                    acceptTerms: false
+                  },
+                  validation,
+                  onSubmit: handleSubmit
+                });
+                
+                if (submitSuccess) {
+                  return (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+                      <h3 className="text-lg font-medium text-green-800 mb-2">Conta criada com sucesso!</h3>
+                      <p className="text-green-600 mb-4">
+                        Enviamos um email de confirmação para {values.email}. Por favor, verifique sua caixa de entrada.
+                      </p>
+                      <Button onClick={reset}>Criar outra conta</Button>
+                    </div>
+                  );
+                }
+                
+                return (
+                  <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-6">Criar Conta</h2>
+                    
+                    {submitError && (
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                        <p className="text-red-600">{submitError}</p>
+                      </div>
+                    )}
+                    
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      <Input
+                        label="Nome"
+                        name="name"
+                        type="text"
+                        value={values.name}
+                        onChange={(e) => handleChange('name', e.target.value)}
+                        onBlur={() => handleBlur('name')}
+                        error={touched.name ? errors.name : undefined}
+                        required
+                      />
+                      
+                      <Input
+                        label="Email"
+                        name="email"
+                        type="email"
+                        value={values.email}
+                        onChange={(e) => handleChange('email', e.target.value)}
+                        onBlur={() => handleBlur('email')}
+                        error={touched.email ? errors.email : undefined}
+                        required
+                      />
+                      
+                      <Input
+                        label="Senha"
+                        name="password"
+                        type="password"
+                        value={values.password}
+                        onChange={(e) => handleChange('password', e.target.value)}
+                        onBlur={() => handleBlur('password')}
+                        error={touched.password ? errors.password : undefined}
+                        required
+                      />
+                      
+                      <Input
+                        label="Confirmar Senha"
+                        name="confirmPassword"
+                        type="password"
+                        value={values.confirmPassword}
+                        onChange={(e) => handleChange('confirmPassword', e.target.value)}
+                        onBlur={() => handleBlur('confirmPassword')}
+                        error={touched.confirmPassword ? errors.confirmPassword : undefined}
+                        required
+                      />
+                      
+                      <div className="flex items-start">
+                        <div className="flex items-center h-5">
+                          <input
+                            id="acceptTerms"
+                            name="acceptTerms"
+                            type="checkbox"
+                            checked={values.acceptTerms}
+                            onChange={(e) => handleChange('acceptTerms', e.target.checked)}
+                            onBlur={() => handleBlur('acceptTerms')}
+                            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          />
+                        </div>
+                        <div className="ml-3 text-sm">
+                          <label htmlFor="acceptTerms" className="font-medium text-gray-700">
+                            Eu aceito os{' '}
+                            <a href="/terms" className="text-blue-600 hover:text-blue-500">
+                              Termos de Uso
+                            </a>{' '}
+                            e{' '}
+                            <a href="/privacy" className="text-blue-600 hover:text-blue-500">
+                              Política de Privacidade
+                            </a>
+                          </label>
+                          {touched.acceptTerms && errors.acceptTerms && (
+                            <p className="mt-1 text-sm text-red-600">{errors.acceptTerms}</p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <Button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="w-full"
+                      >
+                        {isSubmitting ? 'Criando conta...' : 'Criar Conta'}
+                      </Button>
+                    </form>
+                  </div>
+                );
+              };
+              
+              export default SignupForm;
+              ```
+            </code_example>
+          </implementation>
+          <key_points>
+            <point>Uso de hook personalizado para gerenciamento de formulário (useForm)</point>
+            <point>Validação em tempo real com feedback visual</point>
+            <point>Tratamento de estados de envio, sucesso e erro</point>
+            <point>Componentes reutilizáveis (Button, Input)</point>
+            <point>Experiência do usuário otimizada com mensagens claras</point>
+          </key_points>
+        </example>
+        
+        <example id="ui-3" name="Lista de Tarefas com Filtros">
+          <description>Exemplo de lista de tarefas com filtros e ordenação</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              // app/components/TaskList.tsx
+              import React, { useState, useMemo } from 'react';
+              import { useTasks } from '../hooks/useTasks';
+              import { createTaskFilter, createTaskSorter } from '../utils/taskFilters';
+              import TaskItem from './TaskItem';
+              import Button from './Button';
+              import Input from './Input';
+              import Select from './Select';
+              
+              const TaskList: React.FC = () => {
+                const { tasks, addTask, updateTask, deleteTask, toggleTask } = useTasks();
+                const [newTaskTitle, setNewTaskTitle] = useState('');
+                const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
+                const [sortBy, setSortBy] = useState<'createdAt' | 'priority'>('createdAt');
+                const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+                
+                const filteredAndSortedTasks = useMemo(() => {
+                  // Apply filter
+                  let filtered = tasks;
+                  if (filter === 'active') {
+                    filtered = tasks.filter(task => !task.completed);
+                  } else if (filter === 'completed') {
+                    filtered = tasks.filter(task => task.completed);
+                  }
+                  
+                  // Apply sort
+                  const sorter = createTaskSorter({
+                    field: sortBy,
+                    direction: sortDirection
+                  });
+                  
+                  return [...filtered].sort(sorter);
+                }, [tasks, filter, sortBy, sortDirection]);
+                
+                const handleAddTask = (e: React.FormEvent) => {
+                  e.preventDefault();
+                  
+                  if (newTaskTitle.trim()) {
+                    addTask({
+                      title: newTaskTitle.trim(),
+                      completed: false,
+                      priority: 'medium'
+                    });
+                    setNewTaskTitle('');
+                  }
+                };
+                
+                const handleToggleSortDirection = () => {
+                  setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+                };
+                
+                return (
+                  <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-6">Lista de Tarefas</h2>
+                    
+                    <form onSubmit={handleAddTask} className="flex mb-6">
+                      <Input
+                        value={newTaskTitle}
+                        onChange={(e) => setNewTaskTitle(e.target.value)}
+                        placeholder="Adicionar nova tarefa..."
+                        className="flex-grow mr-2"
+                      />
+                      <Button type="submit">Adicionar</Button>
+                    </form>
+                    
+                    <div className="flex flex-wrap gap-4 mb-6">
+                      <div className="flex-1 min-w-[200px]">
+                        <Select
+                          label="Filtrar"
+                          value={filter}
+                          onChange={(e) => setFilter(e.target.value as any)}
+                          options={[
+                            { value: 'all', label: 'Todas' },
+                            { value: 'active', label: 'Ativas' },
+                            { value: 'completed', label: 'Concluídas' }
+                          ]}
+                        />
+                      </div>
+                      
+                      <div className="flex-1 min-w-[200px]">
+                        <Select
+                          label="Ordenar por"
+                          value={sortBy}
+                          onChange={(e) => setSortBy(e.target.value as any)}
+                          options={[
+                            { value: 'createdAt', label: 'Data de criação' },
+                            { value: 'priority', label: 'Prioridade' }
+                          ]}
+                        />
+                      </div>
+                      
+                      <div className="flex items-end">
+                        <Button
+                          onClick={handleToggleSortDirection}
+                          variant="outline"
+                          className="h-10"
+                        >
+                          {sortDirection === 'asc' ? '↑ Asc' : '↓ Desc'}
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {filteredAndSortedTasks.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        {tasks.length === 0 
+                          ? 'Nenhuma tarefa cadastrada. Adicione uma tarefa para começar.' 
+                          : 'Nenhuma tarefa corresponde aos filtros selecionados.'}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {filteredAndSortedTasks.map(task => (
+                          <TaskItem
+                            key={task.id}
+                            task={task}
+                            onToggle={() => toggleTask(task.id)}
+                            onUpdate={(updates) => updateTask(task.id, updates)}
+                            onDelete={() => deleteTask(task.id)}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    
+                    <div className="mt-6 pt-4 border-t border-gray-200 text-sm text-gray-500">
+                      {tasks.filter(t => !t.completed).length} de {tasks.length} tarefas restantes
+                    </div>
+                  </div>
+                );
+              };
+              
+              export default TaskList;
+              ```
+            </code_example>
+          </implementation>
+          <key_points>
+            <point>Uso de hook personalizado para gerenciamento de tarefas (useTasks)</point>
+            <point>Filtros e ordenação dinâmicos com useMemo para performance</point>
+            <point>Componentes reutilizáveis (TaskItem, Button, Input, Select)</point>
+            <point>Interface responsiva e intuitiva</point>
+            <point>Feedback visual claro sobre o estado das tarefas</point>
+          </key_points>
+        </example>
+        
+        <example id="ui-4" name="Tabela de Dados com Paginação">
+          <description>Exemplo de tabela de dados com paginação e busca</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              // app/components/DataTable.tsx
+              import React, { useState, useMemo, useCallback } from 'react';
+              import { useApi } from '../hooks/useApi';
+              import Loading from './Loading';
+              import Input from './Input';
+              import Button from './Button';
+              import Pagination from './Pagination';
+              
+              interface User {
+                id: string;
+                name: string;
+                email: string;
+                role: 'admin' | 'user' | 'moderator';
+                createdAt: string;
+                lastLogin: string;
+              }
+              
+              interface ApiResponse {
+                users: User[];
+                total: number;
+                page: number;
+                limit: number;
+              }
+              
+              const DataTable: React.FC = () => {
+                const [searchTerm, setSearchTerm] = useState('');
+                const [currentPage, setCurrentPage] = useState(1);
+                const [itemsPerPage] = useState(10);
+                
+                const { data, loading, error, execute } = useApi<ApiResponse>({
+                  url: '/api/users',
+                  method: 'GET',
+                  immediate: true
+                });
+                
+                const handleSearch = useCallback(() => {
+                  execute({
+                    url: `/api/users?search=${encodeURIComponent(searchTerm)}&page=${currentPage}&limit=${itemsPerPage}`
+                  });
+                }, [searchTerm, currentPage, itemsPerPage, execute]);
+                
+                const handlePageChange = useCallback((page: number) => {
+                  setCurrentPage(page);
+                }, []);
+                
+                const filteredUsers = useMemo(() => {
+                  if (!data) return [];
+                  
+                  // If we have search results from API, use them
+                  if (searchTerm) {
+                    return data.users;
+                  }
+                  
+                  // Otherwise, filter client-side
+                  return data.users.filter(user => 
+                    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+                  );
+                }, [data, searchTerm]);
+                
+                const totalPages = data ? Math.ceil(data.total / itemsPerPage) : 0;
+                
+                const formatDate = (dateString: string) => {
+                  return new Date(dateString).toLocaleDateString('pt-BR');
+                };
+                
+                const getRoleBadgeColor = (role: string) => {
+                  switch (role) {
+                    case 'admin': return 'bg-red-100 text-red-800';
+                    case 'moderator': return 'bg-blue-100 text-blue-800';
+                    default: return 'bg-gray-100 text-gray-800';
+                  }
+                };
+                
+                if (loading) return <Loading overlay={false} text="Carregando dados..." />;
+                if (error) return <div>Erro ao carregar dados: {error.message}</div>;
+                if (!data) return <div>Nenhum dado disponível</div>;
+                
+                return (
+                  <div className="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div className="p-6">
+                      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                        <h2 className="text-xl font-bold text-gray-800 mb-4 md:mb-0">Usuários</h2>
+                        
+                        <div className="flex flex-col sm:flex-row gap-3">
+                          <div className="relative">
+                            <Input
+                              type="text"
+                              placeholder="Buscar usuários..."
+                              value={searchTerm}
+                              onChange={(e) => setSearchTerm(e.target.value)}
+                              className="pr-10"
+                            />
+                            <Button
+                              onClick={handleSearch}
+                              variant="ghost"
+                              size="sm"
+                              className="absolute right-1 top-1/2 transform -translate-y-1/2"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                              </svg>
+                            </Button>
+                          </div>
+                          
+                          <Button>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            Novo Usuário
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Nome
+                              </th>
+                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Email
+                              </th>
+                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Função
+                              </th>
+                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Data de Cadastro
+                              </th>
+                              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Último Acesso
+                              </th>
+                              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Ações
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {filteredUsers.length === 0 ? (
+                              <tr>
+                                <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
+                                  Nenhum usuário encontrado
+                                </td>
+                              </tr>
+                            ) : (
+                              filteredUsers.map(user => (
+                                <tr key={user.id} className="hover:bg-gray-50">
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center">
+                                      <div className="flex-shrink-0 h-10 w-10">
+                                        <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium">
+                                          {user.name.charAt(0)}
+                                        </div>
+                                      </div>
+                                      <div className="ml-4">
+                                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="text-sm text-gray-900">{user.email}</div>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleBadgeColor(user.role)}`}>
+                                      {user.role}
+                                    </span>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {formatDate(user.createdAt)}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {user.lastLogin ? formatDate(user.lastLogin) : 'Nunca'}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <Button variant="ghost" size="sm" className="mr-2">
+                                      Editar
+                                    </Button>
+                                    <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-900">
+                                      Excluir
+                                    </Button>
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                      
+                      {totalPages > 1 && (
+                        <div className="mt-6">
+                          <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                          />
+                        </div>
+                      )}
+                      
+                      <div className="mt-4 text-sm text-gray-500">
+                        Mostrando {filteredUsers.length} de {data.total} usuários
+                      </div>
+                    </div>
+                  </div>
+                );
+              };
+              
+              export default DataTable;
+              ```
+            </code_example>
+          </implementation>
+          <key_points>
+            <point>Uso de hook personalizado para chamadas de API (useApi)</point>
+            <point>Busca e paginação de dados</point>
+            <point>Componentes reutilizáveis (Loading, Input, Button, Pagination)</point>
+            <point>Design responsivo com overflow horizontal em telas pequenas</point>
+            <point>Formatação de dados e estilização condicional</point>
+          </key_points>
+        </example>
+      </examples>
+    </category>
+    
+    <category id="react-examples" name="Exemplos React">
+      <examples>
+        <example id="react-1" name="Hook Personalizado para Gerenciamento de Estado">
+          <description>Exemplo de hook personalizado para gerenciar estado complexo</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              // app/hooks/useLocalStorage.ts
+              import { useState, useEffect } from 'react';
+              
+              function useLocalStorage<T>(key: string, initialValue: T) {
+                // State to store our value
+                // Pass initial state function to useState so logic is only executed once
+                const [storedValue, setStoredValue] = useState<T>(() => {
+                  if (typeof window === "undefined") {
+                    return initialValue;
+                  }
+                  try {
+                    // Get from local storage by key
+                    const item = window.localStorage.getItem(key);
+                    // Parse stored json or return initialValue
+                    return item ? JSON.parse(item) : initialValue;
+                  } catch (error) {
+                    // If error also return initialValue
+                    console.log(error);
+                    return initialValue;
+                  }
+                });
+                
+                // Return a wrapped version of useState's setter function that...
+                // ... persists the new value to localStorage.
+                const setValue = (value: T | ((val: T) => T)) => {
+                  try {
+                    // Allow value to be a function so we have same API as useState
+                    const valueToStore = value instanceof Function ? value(storedValue) : value;
+                    // Save state
+                    setStoredValue(valueToStore);
+                    // Save to local storage
+                    if (typeof window !== "undefined") {
+                      window.localStorage.setItem(key, JSON.stringify(valueToStore));
+                    }
+                  } catch (error) {
+                    // A more advanced implementation would handle the error case
+                    console.log(error);
+                  }
+                };
+                
+                return [storedValue, setValue] as const;
+              }
+              
+              export default useLocalStorage;
+              
+              // Usage example:
+              // const [name, setName] = useLocalStorage('name', 'John Doe');
+              ```
+            </code_example>
+          </implementation>
+          <key_points>
+            <point>Hook reutilizável para persistência de estado no localStorage</point>
+            <point>Tratamento de erros e casos de borda</point>
+            <point>API compatível com useState padrão</point>
+            <point>Funciona tanto no cliente quanto no servidor (SSR)</point>
+          </key_points>
+        </example>
+        
+        <example id="react-2" name="Context para Gerenciamento de Autenticação">
+          <description>Exemplo de context para gerenciamento de autenticação</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              // app/context/AuthContext.tsx
+              import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+              
+              interface User {
+                id: string;
+                name: string;
+                email: string;
+                role: string;
+              }
+              
+              interface AuthContextType {
+                user: User | null;
+                loading: boolean;
+                login: (email: string, password: string) => Promise<boolean>;
+                logout: () => void;
+                register: (name: string, email: string, password: string) => Promise<boolean>;
+              }
+              
+              const AuthContext = createContext<AuthContextType | undefined>(undefined);
+              
+              interface AuthProviderProps {
+                children: ReactNode;
+              }
+              
+              const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+                const [user, setUser] = useState<User | null>(null);
+                const [loading, setLoading] = useState(true);
+                
+                useEffect(() => {
+                  // Check if user is logged in on app start
+                  const checkAuthStatus = async () => {
+                    try {
+                      const token = localStorage.getItem('authToken');
+                      
+                      if (!token) {
+                        setLoading(false);
+                        return;
+                      }
+                      
+                      const response = await fetch('/api/auth/me', {
+                        headers: {
+                          'Authorization': `Bearer ${token}`
+                        }
+                      });
+                      
+                      if (response.ok) {
+                        const userData = await response.json();
+                        setUser(userData);
+                      } else {
+                        // Token is invalid or expired
+                        localStorage.removeItem('authToken');
+                      }
+                    } catch (error) {
+                      console.error('Error checking auth status:', error);
+                    } finally {
+                      setLoading(false);
+                    }
+                  };
+                  
+                  checkAuthStatus();
+                }, []);
+                
+                const login = async (email: string, password: string): Promise<boolean> => {
+                  try {
+                    const response = await fetch('/api/auth/login', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({ email, password })
+                    });
+                    
+                    if (!response.ok) {
+                      return false;
+                    }
+                    
+                    const { user, token } = await response.json();
+                    
+                    // Save token to localStorage
+                    localStorage.setItem('authToken', token);
+                    
+                    // Update user state
+                    setUser(user);
+                    
+                    return true;
+                  } catch (error) {
+                    console.error('Login error:', error);
+                    return false;
+                  }
+                };
+                
+                const register = async (name: string, email: string, password: string): Promise<boolean> => {
+                  try {
+                    const response = await fetch('/api/auth/register', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({ name, email, password })
+                    });
+                    
+                    if (!response.ok) {
+                      return false;
+                    }
+                    
+                    const { user, token } = await response.json();
+                    
+                    // Save token to localStorage
+                    localStorage.setItem('authToken', token);
+                    
+                    // Update user state
+                    setUser(user);
+                    
+                    return true;
+                  } catch (error) {
+                    console.error('Registration error:', error);
+                    return false;
+                  }
+                };
+                
+                const logout = () => {
+                  // Remove token from localStorage
+                  localStorage.removeItem('authToken');
+                  
+                  // Update user state
+                  setUser(null);
+                };
+                
+                return (
+                  <AuthContext.Provider value={{ user, loading, login, logout, register }}>
+                    {children}
+                  </AuthContext.Provider>
+                );
+              };
+              
+              const useAuth = () => {
+                const context = useContext(AuthContext);
+                if (context === undefined) {
+                  throw new Error('useAuth must be used within an AuthProvider');
+                }
+                return context;
+              };
+              
+              export { AuthProvider, useAuth };
+              export type { User };
+              ```
+            </code_example>
+          </implementation>
+          <key_points>
+            <point>Context completo para gerenciamento de autenticação</point>
+            <point>Persistência de token no localStorage</point>
+            <point>Verificação de status de autenticação na inicialização</point>
+            <point>Hook personalizado (useAuth) para fácil acesso ao contexto</point>
+            <point>Tratamento de erros e estados de carregamento</point>
+          </key_points>
+        </example>
+        
+        <example id="react-3" name="Componente de Grade de Imagens com Lazy Loading">
+          <description>Exemplo de componente de grade de imagens com lazy loading</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              // app/components/ImageGrid.tsx
+              import React, { useState, useEffect, useRef } from 'react';
+              
+              interface ImageItem {
+                id: string;
+                src: string;
+                thumbnail: string;
+                title: string;
+                description?: string;
+              }
+              
+              interface ImageGridProps {
+                images: ImageItem[];
+                itemsPerRow?: number;
+                gap?: number;
+                onImageClick?: (image: ImageItem) => void;
+              }
+              
+              const ImageGrid: React.FC<ImageGridProps> = ({
+                images,
+                itemsPerRow = 3,
+                gap = 16,
+                onImageClick
+              }) => {
+                const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
+                const [visibleImages, setVisibleImages] = useState<Set<string>>(new Set());
+                const gridRef = useRef<HTMLDivElement>(null);
+                const observerRef = useRef<IntersectionObserver | null>(null);
+                
+                useEffect(() => {
+                  // Set up intersection observer for lazy loading
+                  observerRef.current = new IntersectionObserver(
+                    (entries) => {
+                      entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                          const imageId = entry.target.getAttribute('data-image-id');
+                          if (imageId) {
+                            setVisibleImages(prev => new Set(prev).add(imageId));
+                          }
+                        }
+                      });
+                    },
+                    {
+                      rootMargin: '100px' // Start loading when image is 100px from viewport
+                    }
+                  );
+                  
+                  // Clean up observer on unmount
+                  return () => {
+                    if (observerRef.current) {
+                      observerRef.current.disconnect();
+                    }
+                  };
+                }, []);
+                
+                useEffect(() => {
+                  // Observe all image elements
+                  if (gridRef.current && observerRef.current) {
+                    const imageElements = gridRef.current.querySelectorAll('.image-item');
+                    imageElements.forEach(element => {
+                      observerRef.current?.observe(element);
+                    });
+                  }
+                }, [images]);
+                
+                const handleImageLoad = (imageId: string) => {
+                  setLoadedImages(prev => new Set(prev).add(imageId));
+                };
+                
+                const handleImageClick = (image: ImageItem) => {
+                  if (onImageClick) {
+                    onImageClick(image);
+                  }
+                };
+                
+                const gridStyle = {
+                  display: 'grid',
+                  gridTemplateColumns: `repeat(${itemsPerRow}, 1fr)`,
+                  gap: `${gap}px`
+                };
+                
+                return (
+                  <div ref={gridRef} style={gridStyle} className="image-grid">
+                    {images.map(image => (
+                      <div
+                        key={image.id}
+                        data-image-id={image.id}
+                        className="image-item cursor-pointer group"
+                        onClick={() => handleImageClick(image)}
+                      >
+                        <div className="relative overflow-hidden rounded-lg aspect-square bg-gray-200">
+                          {!loadedImages.has(image.id) && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600"></div>
+                            </div>
+                          )}
+                          
+                          {visibleImages.has(image.id) && (
+                            <img
+                              src={image.thumbnail}
+                              alt={image.title}
+                              className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${
+                                loadedImages.has(image.id) ? 'opacity-100' : 'opacity-0'
+                              }`}
+                              onLoad={() => handleImageLoad(image.id)}
+                            />
+                          )}
+                          
+                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-300 flex items-center justify-center">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-10 w-10 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                              />
+                            </svg>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-2">
+                          <h3 className="font-medium text-gray-900 truncate">{image.title}</h3>
+                          {image.description && (
+                            <p className="text-sm text-gray-500 truncate">{image.description}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              };
+              
+              export default ImageGrid;
+              ```
+            </code_example>
+          </implementation>
+          <key_points>
+            <point>Lazy loading de imagens com Intersection Observer API</point>
+            <point>Feedback visual durante o carregamento</point>
+            <point>Efeitos de hover e transições suaves</point>
+            <point>Layout responsivo com CSS Grid</point>
+            <point>Callback para clique em imagens</point>
+          </key_points>
+        </example>
+        
+        <example id="react-4" name="Componente de Tabs com Acessibilidade">
+          <description>Exemplo de componente de tabs com suporte a acessibilidade</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              // app/components/Tabs.tsx
+              import React, { useState, useRef, useEffect } from 'react';
+              
+              interface Tab {
+                id: string;
+                label: string;
+                content: React.ReactNode;
+              }
+              
+              interface TabsProps {
+                tabs: Tab[];
+                defaultTab?: string;
+                className?: string;
+              }
+              
+              const Tabs: React.FC<TabsProps> = ({ tabs, defaultTab, className = '' }) => {
+                const [activeTabId, setActiveTabId] = useState(defaultTab || tabs[0]?.id || '');
+                const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+                
+                // Set default tab if provided and valid
+                useEffect(() => {
+                  if (defaultTab && tabs.some(tab => tab.id === defaultTab)) {
+                    setActiveTabId(defaultTab);
+                  }
+                }, [defaultTab, tabs]);
+                
+                const handleTabClick = (tabId: string) => {
+                  setActiveTabId(tabId);
+                };
+                
+                const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+                  const tabCount = tabs.length;
+                  
+                  switch (e.key) {
+                    case 'ArrowRight':
+                      e.preventDefault();
+                      const nextIndex = (index + 1) % tabCount;
+                      tabRefs.current[nextIndex]?.focus();
+                      setActiveTabId(tabs[nextIndex].id);
+                      break;
+                      
+                    case 'ArrowLeft':
+                      e.preventDefault();
+                      const prevIndex = (index - 1 + tabCount) % tabCount;
+                      tabRefs.current[prevIndex]?.focus();
+                      setActiveTabId(tabs[prevIndex].id);
+                      break;
+                      
+                    case 'Home':
+                      e.preventDefault();
+                      tabRefs.current[0]?.focus();
+                      setActiveTabId(tabs[0].id);
+                      break;
+                      
+                    case 'End':
+                      e.preventDefault();
+                      tabRefs.current[tabCount - 1]?.focus();
+                      setActiveTabId(tabs[tabCount - 1].id);
+                      break;
+                      
+                    default:
+                      break;
+                  }
+                };
+                
+                const activeTab = tabs.find(tab => tab.id === activeTabId);
+                
+                return (
+                  <div className={`tabs-container ${className}`}>
+                    <div className="border-b border-gray-200">
+                      <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+                        {tabs.map((tab, index) => (
+                          <button
+                            key={tab.id}
+                            ref={el => tabRefs.current[index] = el}
+                            type="button"
+                            className={`
+                              whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm
+                              ${tab.id === activeTabId
+                                ? 'border-blue-500 text-blue-600'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                              }
+                            `}
+                            onClick={() => handleTabClick(tab.id)}
+                            onKeyDown={(e) => handleKeyDown(e, index)}
+                            id={`tab-${tab.id}`}
+                            aria-selected={tab.id === activeTabId}
+                            aria-controls={`tabpanel-${tab.id}`}
+                            role="tab"
+                            tabIndex={tab.id === activeTabId ? 0 : -1}
+                          >
+                            {tab.label}
+                          </button>
+                        ))}
+                      </nav>
+                    </div>
+                    
+                    <div className="mt-4">
+                      {tabs.map(tab => (
+                        <div
+                          key={tab.id}
+                          id={`tabpanel-${tab.id}`}
+                          aria-labelledby={`tab-${tab.id}`}
+                          role="tabpanel"
+                          tabIndex={0}
+                          className={tab.id === activeTabId ? 'block' : 'hidden'}
+                        >
+                          {tab.content}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              };
+              
+              export default Tabs;
+              
+              // Usage example:
+              // const tabs = [
+              //   {
+              //     id: 'tab1',
+              //     label: 'Profile',
+              //     content: <div>Profile content</div>
+              //   },
+              //   {
+              //     id: 'tab2',
+              //     label: 'Settings',
+              //     content: <div>Settings content</div>
+              //   }
+              // ];
+              // 
+              // <Tabs tabs={tabs} defaultTab="tab2" />
+              ```
+            </code_example>
+          </implementation>
+          <key_points>
+            <point>Totalmente acessível com suporte a teclado</point>
+            <point>Navegação com setas, Home e End</point>
+            <point>Atributos ARIA corretos para screen readers</point>
+            <point>Gerenciamento de foco adequado</point>
+            <point>API simples e flexível</point>
+          </key_points>
+        </example>
+      </examples>
+    </category>
+    
+    <category id="remix-examples" name="Exemplos Remix">
+      <examples>
+        <example id="remix-1" name="Rota com Loader e Action">
+          <description>Exemplo de rota Remix com loader para carregar dados e action para processar formulário</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              // app/routes/products.$productId.tsx
+              import { json, LoaderFunctionArgs, ActionFunctionArgs } from '@remix-run/node';
+              import { useLoaderData, Form, useActionData } from '@remix-run/react';
+              import { getProductById, updateProduct } from '~/models/product.server';
+              import { requireUserId } from '~/session.server';
+              import { z } from 'zod';
+              
+              // Schema for validating form data
+              const UpdateProductSchema = z.object({
+                name: z.string().min(1, 'Nome é obrigatório'),
+                description: z.string().optional(),
+                price: z.coerce.number().min(0.01, 'Preço deve ser maior que zero'),
+                category: z.string().min(1, 'Categoria é obrigatória'),
+                inStock: z.coerce.boolean(),
+              });
+              
+              type UpdateProductFormData = z.infer<typeof UpdateProductSchema>;
+              
+              // Loader to fetch product data
+              export async function loader({ request, params }: LoaderFunctionArgs) {
+                const userId = await requireUserId(request);
+                const productId = params.productId;
+                
+                if (!productId) {
+                  throw new Response('ID do produto não fornecido', { status: 400 });
+                }
+                
+                const product = await getProductById(productId);
+                
+                if (!product) {
+                  throw new Response('Produto não encontrado', { status: 404 });
+                }
+                
+                return json({ product });
+              }
+              
+              // Action to handle form submission
+              export async function action({ request, params }: ActionFunctionArgs) {
+                const userId = await requireUserId(request);
+                const productId = params.productId;
+                
+                if (!productId) {
+                  return json(
+                    { error: 'ID do produto não fornecido' },
+                    { status: 400 }
+                  );
+                }
+                
+                const formData = await request.formData();
+                const rawData = Object.fromEntries(formData);
+                
+                // Validate form data
+                const result = UpdateProductSchema.safeParse(rawData);
+                
+                if (!result.success) {
+                  return json(
+                    { 
+                      error: 'Dados inválidos', 
+                      fieldErrors: result.error.flatten().fieldErrors 
+                    },
+                    { status: 400 }
+                  );
+                }
+                
+                const data = result.data;
+                
+                try {
+                  // Update product
+                  const updatedProduct = await updateProduct(productId, {
+                    name: data.name,
+                    description: data.description || null,
+                    price: data.price,
+                    category: data.category,
+                    inStock: data.inStock,
+                  });
+                  
+                  return json({ 
+                    success: true, 
+                    product: updatedProduct 
+                  });
+                } catch (error) {
+                  return json(
+                    { error: 'Erro ao atualizar produto' },
+                    { status: 500 }
+                  );
+                }
+              }
+              
+              export default function ProductEdit() {
+                const { product } = useLoaderData<typeof loader>();
+                const actionData = useActionData<typeof action>();
+                
+                return (
+                  <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6">
+                    <h1 className="text-2xl font-bold text-gray-800 mb-6">Editar Produto</h1>
+                    
+                    {actionData?.error && (
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                        <p className="text-red-600">{actionData.error}</p>
+                      </div>
+                    )}
+                    
+                    {actionData?.success && (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                        <p className="text-green-600">Produto atualizado com sucesso!</p>
+                      </div>
+                    )}
+                    
+                    <Form method="post" className="space-y-4">
+                      <div>
+                        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                          Nome *
+                        </label>
+                        <input
+                          type="text"
+                          id="name"
+                          name="name"
+                          defaultValue={product.name}
+                          className={`w-full px-3 py-2 border rounded-md ${
+                            actionData?.fieldErrors?.name ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                        />
+                        {actionData?.fieldErrors?.name && (
+                          <p className="mt-1 text-sm text-red-600">{actionData.fieldErrors.name}</p>
+                        )}
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                          Descrição
+                        </label>
+                        <textarea
+                          id="description"
+                          name="description"
+                          rows={3}
+                          defaultValue={product.description || ''}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
+                          Preço *
+                        </label>
+                        <input
+                          type="number"
+                          id="price"
+                          name="price"
+                          step="0.01"
+                          min="0.01"
+                          defaultValue={product.price}
+                          className={`w-full px-3 py-2 border rounded-md ${
+                            actionData?.fieldErrors?.price ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                        />
+                        {actionData?.fieldErrors?.price && (
+                          <p className="mt-1 text-sm text-red-600">{actionData.fieldErrors.price}</p>
+                        )}
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                          Categoria *
+                        </label>
+                        <select
+                          id="category"
+                          name="category"
+                          defaultValue={product.category}
+                          className={`w-full px-3 py-2 border rounded-md ${
+                            actionData?.fieldErrors?.category ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                        >
+                          <option value="">Selecione uma categoria</option>
+                          <option value="electronics">Eletrônicos</option>
+                          <option value="clothing">Roupas</option>
+                          <option value="home">Casa</option>
+                          <option value="books">Livros</option>
+                        </select>
+                        {actionData?.fieldErrors?.category && (
+                          <p className="mt-1 text-sm text-red-600">{actionData.fieldErrors.category}</p>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center">
+                        <input
+                          id="inStock"
+                          name="inStock"
+                          type="checkbox"
+                          defaultChecked={product.inStock}
+                          className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <label htmlFor="inStock" className="ml-2 block text-sm text-gray-700">
+                          Em estoque
+                        </label>
+                      </div>
+                      
+                      <div className="flex justify-end space-x-3 pt-4">
+                        <button
+                          type="button"
+                          className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="submit"
+                          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                        >
+                          Salvar
+                        </button>
+                      </div>
+                    </Form>
+                  </div>
+                );
+              }
+              ```
+            </code_example>
+          </implementation>
+          <key_points>
+            <point>Loader para carregar dados do produto no servidor</point>
+            <point>Action para processar formulário de atualização</point>
+            <point>Validação de dados com Zod</point>
+            <point>Tratamento de erros e feedback visual</point>
+            <point>Uso de hooks do Remix (useLoaderData, useActionData)</point>
+          </key_points>
+        </example>
+        
+        <example id="remix-2" name="Rota Dinâmica com Parâmetros">
+          <description>Exemplo de rota dinâmica com parâmetros de busca e paginação</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              // app/routes/search.tsx
+              import { json, LoaderFunctionArgs } from '@remix-run/node';
+              import { useLoaderData, Link } from '@remix-run/react';
+              import { searchProducts } from '~/models/product.server';
+              import { z } from 'zod';
+              
+              // Schema for validating search params
+              const SearchParamsSchema = z.object({
+                q: z.string().optional(),
+                category: z.string().optional(),
+                minPrice: z.coerce.number().optional(),
+                maxPrice: z.coerce.number().optional(),
+                page: z.coerce.number().min(1).default(1),
+                limit: z.coerce.number().min(1).max(50).default(12),
+                sort: z.enum(['relevance', 'price-asc', 'price-desc', 'name']).default('relevance'),
+              });
+              
+              type SearchParams = z.infer<typeof SearchParamsSchema>;
+              
+              export async function loader({ request }: LoaderFunctionArgs) {
+                const url = new URL(request.url);
+                const rawParams = Object.fromEntries(url.searchParams);
+                
+                // Validate search params
+                const result = SearchParamsSchema.safeParse(rawParams);
+                
+                if (!result.success) {
+                  return json(
+                    { 
+                      error: 'Parâmetros de busca inválidos',
+                      products: [],
+                      pagination: {
+                        page: 1,
+                        limit: 12,
+                        total: 0,
+                        totalPages: 0
+                      }
+                    },
+                    { status: 400 }
+                  );
+                }
+                
+                const params = result.data;
+                
+                try {
+                  // Search products
+                  const { products, total } = await searchProducts({
+                    query: params.q,
+                    category: params.category,
+                    minPrice: params.minPrice,
+                    maxPrice: params.maxPrice,
+                    page: params.page,
+                    limit: params.limit,
+                    sort: params.sort
+                  });
+                  
+                  const totalPages = Math.ceil(total / params.limit);
+                  
+                  return json({
+                    products,
+                    searchParams: params,
+                    pagination: {
+                      page: params.page,
+                      limit: params.limit,
+                      total,
+                      totalPages
+                    }
+                  });
+                } catch (error) {
+                  return json(
+                    { 
+                      error: 'Erro ao buscar produtos',
+                      products: [],
+                      pagination: {
+                        page: 1,
+                        limit: 12,
+                        total: 0,
+                        totalPages: 0
+                      }
+                    },
+                    { status: 500 }
+                  );
+                }
+              }
+              
+              export default function SearchPage() {
+                const { products, searchParams, pagination, error } = useLoaderData<typeof loader>();
+                
+                const buildUrl = (newParams: Partial<SearchParams>) => {
+                  const params = new URLSearchParams();
+                  
+                  Object.entries({ ...searchParams, ...newParams }).forEach(([key, value]) => {
+                    if (value !== undefined && value !== null && value !== '') {
+                      params.append(key, String(value));
+                    }
+                  });
+                  
+                  return `/search?${params.toString()}`;
+                };
+                
+                return (
+                  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <div className="mb-8">
+                      <h1 className="text-3xl font-bold text-gray-900">
+                        {searchParams.q ? `Resultados para "${searchParams.q}"` : 'Buscar Produtos'}
+                      </h1>
+                      
+                      {error && (
+                        <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
+                          <p className="text-red-600">{error}</p>
+                        </div>
+                      )}
+                      
+                      <div className="mt-4 flex flex-wrap gap-4">
+                        <div>
+                          <label htmlFor="sort" className="block text-sm font-medium text-gray-700 mb-1">
+                            Ordenar por
+                          </label>
+                          <select
+                            id="sort"
+                            value={searchParams.sort}
+                            onChange={(e) => {
+                              window.location.href = buildUrl({ 
+                                sort: e.target.value as any,
+                                page: 1 
+                              });
+                            }}
+                            className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                          >
+                            <option value="relevance">Relevância</option>
+                            <option value="price-asc">Menor Preço</option>
+                            <option value="price-desc">Maior Preço</option>
+                            <option value="name">Nome (A-Z)</option>
+                          </select>
+                        </div>
+                        
+                        <div>
+                          <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                            Categoria
+                          </label>
+                          <select
+                            id="category"
+                            value={searchParams.category || ''}
+                            onChange={(e) => {
+                              window.location.href = buildUrl({ 
+                                category: e.target.value || undefined,
+                                page: 1 
+                              });
+                            }}
+                            className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                          >
+                            <option value="">Todas as categorias</option>
+                            <option value="electronics">Eletrônicos</option>
+                            <option value="clothing">Roupas</option>
+                            <option value="home">Casa</option>
+                            <option value="books">Livros</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {products.length === 0 ? (
+                      <div className="text-center py-12">
+                        <svg
+                          className="mx-auto h-12 w-12 text-gray-400"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          aria-hidden="true"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                        <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhum produto encontrado</h3>
+                        <p className="mt-1 text-sm text-gray-500">
+                          Tente usar termos de busca diferentes ou filtros menos restritivos.
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="mb-4 text-sm text-gray-500">
+                          Mostrando {products.length} de {pagination.total} produtos
+                        </div>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                          {products.map(product => (
+                            <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                              <Link to={`/products/${product.id}`}>
+                                <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden bg-gray-200">
+                                  <img
+                                    src={product.imageUrl}
+                                    alt={product.name}
+                                    className="w-full h-48 object-cover"
+                                  />
+                                </div>
+                                <div className="p-4">
+                                  <h3 className="text-lg font-medium text-gray-900">{product.name}</h3>
+                                  <p className="mt-1 text-sm text-gray-500">{product.category}</p>
+                                  <p className="mt-2 text-lg font-semibold text-gray-900">
+                                    {new Intl.NumberFormat('pt-BR', {
+                                      style: 'currency',
+                                      currency: 'BRL'
+                                    }).format(product.price)}
+                                  </p>
+                                </div>
+                              </Link>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        {pagination.totalPages > 1 && (
+                          <div className="mt-8 flex justify-center">
+                            <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                              {pagination.page > 1 && (
+                                <Link
+                                  to={buildUrl({ page: pagination.page - 1 })}
+                                  className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                                >
+                                  <span className="sr-only">Anterior</span>
+                                  <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                </Link>
+                              )}
+                              
+                              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                                .filter(page => {
+                                  // Show current page, first page, last page, and pages adjacent to current page
+                                  return (
+                                    page === 1 ||
+                                    page === pagination.totalPages ||
+                                    Math.abs(page - pagination.page) <= 1
+                                  );
+                                })
+                                .map((page, index, array) => {
+                                  // Add ellipsis if there's a gap
+                                  if (index > 0 && page - array[index - 1] > 1) {
+                                    return (
+                                      <React.Fragment key={`ellipsis-${page}`}>
+                                        <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                                          ...
+                                        </span>
+                                        <Link
+                                          key={page}
+                                          to={buildUrl({ page })}
+                                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                                            page === pagination.page
+                                              ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                                          }`}
+                                        >
+                                          {page}
+                                        </Link>
+                                      </React.Fragment>
+                                    );
+                                  }
+                                  
+                                  return (
+                                    <Link
+                                      key={page}
+                                      to={buildUrl({ page })}
+                                      className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                                        page === pagination.page
+                                          ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                                          : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                                      }`}
+                                    >
+                                      {page}
+                                    </Link>
+                                  );
+                                })}
+                              
+                              {pagination.page < pagination.totalPages && (
+                                <Link
+                                  to={buildUrl({ page: pagination.page + 1 })}
+                                  className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                                >
+                                  <span className="sr-only">Próxima</span>
+                                  <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                </Link>
+                              )}
+                            </nav>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              }
+              ```
+            </code_example>
+          </implementation>
+          <key_points>
+            <point>Validação de parâmetros de busca com Zod</point>
+            <point>Construção dinâmica de URLs com parâmetros</point>
+            <point>Paginação de resultados com navegação completa</point>
+            <point>Filtros e ordenação de produtos</point>
+            <point>Layout responsivo com grid system</point>
+          </key_points>
+        </example>
+        
+        <example id="remix-3" name="Rota Protegida com Autenticação">
+          <description>Exemplo de rota protegida que requer autenticação</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              // app/routes/dashboard.tsx
+              import { json, LoaderFunctionArgs } from '@remix-run/node';
+              import { useLoaderData } from '@remix-run/react';
+              import { getUserById } from '~/models/user.server';
+              import { getUserSession } from '~/session.server';
+              import { requireUserId } from '~/session.server';
+              import DashboardStats from '~/components/DashboardStats';
+              import RecentActivity from '~/components/RecentActivity';
+              
+              export async function loader({ request }: LoaderFunctionArgs) {
+                // Check if user is authenticated
+                const userId = await requireUserId(request);
+                
+                // Get user session
+                const session = await getUserSession(request);
+                
+                try {
+                  // Fetch user data
+                  const user = await getUserById(userId);
+                  
+                  if (!user) {
+                    // Clear session if user not found
+                    return redirect('/login', {
+                      headers: {
+                        'Set-Cookie': await destroySession(session),
+                      },
+                    });
+                  }
+                  
+                  // Fetch dashboard data
+                  const [stats, recentActivity] = await Promise.all([
+                    getDashboardStats(userId),
+                    getRecentActivity(userId)
+                  ]);
+                  
+                  return json({
+                    user: {
+                      id: user.id,
+                      name: user.name,
+                      email: user.email,
+                      role: user.role
+                    },
+                    stats,
+                    recentActivity
+                  });
+                } catch (error) {
+                  console.error('Error loading dashboard data:', error);
+                  return json(
+                    { error: 'Erro ao carregar dados do dashboard' },
+                    { status: 500 }
+                  );
+                }
+              }
+              
+              async function getDashboardStats(userId: string) {
+                // Implementation of dashboard stats fetching
+                return {
+                  totalProjects: 12,
+                  completedProjects: 8,
+                  activeTasks: 5,
+                  pendingReviews: 3
+                };
+              }
+              
+              async function getRecentActivity(userId: string) {
+                // Implementation of recent activity fetching
+                return [
+                  {
+                    id: '1',
+                    type: 'project_created',
+                    title: 'Novo projeto criado',
+                    description: 'Website Redesign',
+                    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000) // 2 hours ago
+                  },
+                  {
+                    id: '2',
+                    type: 'task_completed',
+                    title: 'Tarefa concluída',
+                    description: 'Implementar página de contato',
+                    timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000) // 5 hours ago
+                  },
+                  {
+                    id: '3',
+                    type: 'comment_added',
+                    title: 'Comentário adicionado',
+                    description: 'Feedback sobre design do dashboard',
+                    timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000) // 1 day ago
+                  }
+                ];
+              }
+              
+              export default function Dashboard() {
+                const { user, stats, recentActivity, error } = useLoaderData<typeof loader>();
+                
+                if (error) {
+                  return (
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <h1 className="text-lg font-medium text-red-800">Erro</h1>
+                        <p className="mt-2 text-red-600">{error}</p>
+                      </div>
+                    </div>
+                  );
+                }
+                
+                return (
+                  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <div className="md:flex md:items-center md:justify-between">
+                      <div className="flex-1 min-w-0">
+                        <h1 className="text-2xl font-bold leading-tight text-gray-900">
+                          Dashboard
+                        </h1>
+                        <p className="mt-1 text-sm text-gray-500">
+                          Bem-vindo de volta, {user.name}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                      <DashboardStats stats={stats} />
+                    </div>
+                    
+                    <div className="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-3">
+                      <div className="lg:col-span-2">
+                        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+                          <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+                            <h3 className="text-lg leading-6 font-medium text-gray-900">
+                              Projetos Recentes
+                            </h3>
+                          </div>
+                          <div className="px-4 py-5 sm:p-6">
+                            <div className="space-y-4">
+                              {/* Recent projects would be rendered here */}
+                              <div className="text-center py-8 text-gray-500">
+                                Nenhum projeto recente encontrado
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <RecentActivity activities={recentActivity} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+              
+              // Error boundary for this route
+              export function ErrorBoundary() {
+                return (
+                  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <h1 className="text-lg font-medium text-red-800">Erro inesperado</h1>
+                      <p className="mt-2 text-red-600">
+                        Ocorreu um erro ao carregar o dashboard. Tente novamente mais tarde.
+                      </p>
+                    </div>
+                  </div>
+                );
+              }
+              ```
+            </code_example>
+          </implementation>
+          <key_points>
+            <point>Proteção de rota com requireUserId</point>
+            <point>Carregamento de dados do usuário e dashboard</point>
+            <point>Tratamento de erros com ErrorBoundary</point>
+            <point>Layout responsivo com grid system</point>
+            <point>Componentes reutilizáveis (DashboardStats, RecentActivity)</point>
+          </key_points>
+        </example>
+        
+        <example id="remix-4" name="Rota de API para Upload de Arquivos">
+          <description>Exemplo de rota de API para upload de arquivos com validação</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              // app/routes/api.upload.tsx
+              import { json, ActionFunctionArgs } from '@remix-run/node';
+              import { requireUserId } from '~/session.server';
+              import { uploadFile } from '~/utils/file.server';
+              import { z } from 'zod';
+              
+              // Schema for validating file upload
+              const FileUploadSchema = z.object({
+                purpose: z.enum(['profile', 'post', 'document']),
+                description: z.string().max(200).optional(),
+              });
+              
+              type FileUploadData = z.infer<typeof FileUploadSchema>;
+              
+              export async function action({ request }: ActionFunctionArgs) {
+                // Check if user is authenticated
+                const userId = await requireUserId(request);
+                
+                // Check if content type is multipart/form-data
+                const contentType = request.headers.get('content-type');
+                if (!contentType || !contentType.includes('multipart/form-data')) {
+                  return json(
+                    { error: 'Content-Type deve ser multipart/form-data' },
+                    { status: 400 }
+                  );
+                }
+                
+                try {
+                  // Parse form data
+                  const formData = await request.formData();
+                  const file = formData.get('file') as File | null;
+                  const purpose = formData.get('purpose') as string;
+                  const description = formData.get('description') as string;
+                  
+                  // Validate file presence
+                  if (!file) {
+                    return json(
+                      { error: 'Nenhum arquivo enviado' },
+                      { status: 400 }
+                    );
+                  }
+                  
+                  // Validate form data
+                  const result = FileUploadSchema.safeParse({
+                    purpose,
+                    description: description || undefined
+                  });
+                  
+                  if (!result.success) {
+                    return json(
+                      { 
+                        error: 'Dados inválidos', 
+                        fieldErrors: result.error.flatten().fieldErrors 
+                      },
+                      { status: 400 }
+                    );
+                  }
+                  
+                  const uploadData = result.data;
+                  
+                  // Validate file type and size
+                  const allowedTypes = {
+                    profile: ['image/jpeg', 'image/png', 'image/gif'],
+                    post: ['image/jpeg', 'image/png', 'image/gif', 'video/mp4'],
+                    document: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+                  };
+                  
+                  const maxSizes = {
+                    profile: 2 * 1024 * 1024, // 2MB
+                    post: 10 * 1024 * 1024, // 10MB
+                    document: 5 * 1024 * 1024 // 5MB
+                  };
+                  
+                  const allowedMimeTypes = allowedTypes[uploadData.purpose];
+                  const maxSize = maxSizes[uploadData.purpose];
+                  
+                  if (!allowedMimeTypes.includes(file.type)) {
+                    return json(
+                      { 
+                        error: `Tipo de arquivo não permitido. Tipos permitidos: ${allowedMimeTypes.join(', ')}` 
+                      },
+                      { status: 400 }
+                    );
+                  }
+                  
+                  if (file.size > maxSize) {
+                    return json(
+                      { 
+                        error: `Arquivo muito grande. Tamanho máximo: ${maxSize / (1024 * 1024)}MB` 
+                      },
+                      { status: 400 }
+                    );
+                  }
+                  
+                  // Upload file
+                  const fileUrl = await uploadFile({
+                    file,
+                    userId,
+                    purpose: uploadData.purpose,
+                    description: uploadData.description
+                  });
+                  
+                  return json({
+                    success: true,
+                    file: {
+                      url: fileUrl,
+                      name: file.name,
+                      size: file.size,
+                      type: file.type
+                    }
+                  });
+                } catch (error) {
+                  console.error('File upload error:', error);
+                  return json(
+                    { error: 'Erro ao fazer upload do arquivo' },
+                    { status: 500 }
+                  );
+                }
+              }
+              
+              // This route doesn't render anything, it's just an API endpoint
+              export default function ApiUploadRoute() {
+                return null;
+              }
+              
+              // Error boundary for this route
+              export function ErrorBoundary() {
+                return json(
+                  { error: 'Erro interno do servidor' },
+                  { status: 500 }
+                );
+              }
+              ```
+            </code_example>
+          </implementation>
+          <key_points>
+            <point>Validação de autenticação para upload</point>
+            <point>Validação de tipo e tamanho de arquivo</point>
+            <point>Validação de dados do formulário com Zod</point>
+            <point>Tratamento de erros detalhado</point>
+            <point>API endpoint que não renderiza UI</point>
+          </key_points>
+        </example>
+      </examples>
+    </category>
+    
+    <category id="file-examples" name="Exemplos de Arquivo">
+      <examples>
+        <example id="file-1" name="Leitura e Escrita de Arquivo de Configuração">
+          <description>Exemplo de leitura e escrita de arquivo de configuração JSON</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              // app/utils/config.server.ts
+              import { readJsonFile, writeJsonFile } from './file.server';
+              import path from 'path';
+              
+              interface AppConfig {
+                site: {
+                  name: string;
+                      description: string;
+                      url: string;
+                };
+                database: {
+                      host: string;
+                      port: number;
+                      name: string;
+                      user: string;
+                      password: string;
+                };
+                auth: {
+                      secret: string;
+                      expiresIn: string;
+                };
+                email: {
+                      provider: string;
+                      apiKey: string;
+                      from: string;
+                };
+              }
+              
+              const defaultConfig: AppConfig = {
+                site: {
+                  name: 'My App',
+                  description: 'A awesome application',
+                  url: 'http://localhost:3000'
+                },
+                database: {
+                  host: 'localhost',
+                  port: 5432,
+                  name: 'myapp',
+                  user: 'postgres',
+                  password: 'password'
+                },
+                auth: {
+                  secret: 'your-secret-key',
+                  expiresIn: '7d'
+                },
+                email: {
+                  provider: 'sendgrid',
+                  apiKey: 'your-api-key',
+                  from: 'noreply@example.com'
+                }
+              };
+              
+              class ConfigManager {
+                private configPath: string;
+                private config: AppConfig | null = null;
+                
+                constructor(configPath?: string) {
+                  this.configPath = configPath || path.join(process.cwd(), 'config', 'app.json');
+                }
+                
+                async loadConfig(): Promise<AppConfig> {
+                  try {
+                    // Try to read existing config
+                    this.config = await readJsonFile<AppConfig>(this.configPath);
+                    return this.config;
+                  } catch (error) {
+                    // If file doesn't exist, create default config
+                    if (error.code === 'ENOENT') {
+                      await this.saveConfig(defaultConfig);
+                      this.config = defaultConfig;
+                      return defaultConfig;
+                    }
+                    
+                    // For other errors, rethrow
+                    throw error;
+                  }
+                }
+                
+                async saveConfig(config: AppConfig): Promise<void> {
+                  try {
+                    await writeJsonFile(this.configPath, config);
+                    this.config = config;
+                  } catch (error) {
+                    console.error('Error saving config:', error);
+                    throw new Error(`Failed to save config: ${error.message}`);
+                  }
+                }
+                
+                getConfig(): AppConfig {
+                  if (!this.config) {
+                    throw new Error('Config not loaded. Call loadConfig() first.');
+                  }
+                  return this.config;
+                }
+                
+                updateConfig(updates: Partial<AppConfig>): AppConfig {
+                  if (!this.config) {
+                    throw new Error('Config not loaded. Call loadConfig() first.');
+                  }
+                  
+                  // Deep merge config with updates
+                  this.config = this.deepMerge(this.config, updates);
+                  return this.config;
+                }
+                
+                private deepMerge(target: any, source: any): any {
+                  if (typeof target !== 'object' || target === null) {
+                    return source;
+                  }
+                  
+                  if (typeof source !== 'object' || source === null) {
+                    return target;
+                  }
+                  
+                  const output = { ...target };
+                  
+                  for (const key in source) {
+                    if (source.hasOwnProperty(key)) {
+                      if (typeof source[key] === 'object' && source[key] !== null) {
+                        output[key] = this.deepMerge(target[key], source[key]);
+                      } else {
+                        output[key] = source[key];
+                      }
+                    }
+                  }
+                  
+                  return output;
+                }
+              }
+              
+              // Create a singleton instance
+              const configManager = new ConfigManager();
+              
+              export default configManager;
+              export type { AppConfig };
+              ```
+            </code_example>
+          </implementation>
+          <key_points>
+            <point>Gerenciamento de configuração com padrão Singleton</point>
+            <point>Leitura e escrita de arquivos JSON</point>
+            <point>Deep merge para atualizações parciais</point>
+            <point>Tratamento de erros e valores padrão</point>
+            <point>API simples para gerenciamento de configuração</point>
+          </key_points>
+        </example>
+        
+        <example id="file-2" name="Geração de Relatório em CSV">
+          <description>Exemplo de geração de relatório em formato CSV</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              // app/utils/csv.server.ts
+              import { promises as fs } from 'fs';
+              import path from 'path';
+              
+              interface CsvRow {
+                [key: string]: string | number | boolean | null;
+              }
+              
+              interface CsvOptions {
+                delimiter?: string;
+                headers?: string[];
+                includeHeaders?: boolean;
+              }
+              
+              class CsvGenerator {
+                private delimiter: string;
+                private includeHeaders: boolean;
+                
+                constructor(options: CsvOptions = {}) {
+                  this.delimiter = options.delimiter || ',';
+                  this.includeHeaders = options.includeHeaders !== false;
+                }
+                
+                escapeValue(value: string | number | boolean | null): string {
+                  if (value === null || value === undefined) {
+                    return '';
+                  }
+                  
+                  const stringValue = String(value);
+                  
+                  // If value contains delimiter, newline, or quotes, escape and quote it
+                  if (
+                    stringValue.includes(this.delimiter) ||
+                    stringValue.includes('\n') ||
+                    stringValue.includes('\r') ||
+                    stringValue.includes('"')
+                  ) {
+                    return `"${stringValue.replace(/"/g, '""')}"`;
+                  }
+                  
+                  return stringValue;
+                }
+                
+                generateRow(row: CsvRow, headers?: string[]): string {
+                  const keys = headers || Object.keys(row);
+                  return keys
+                    .map(key => this.escapeValue(row[key]))
+                    .join(this.delimiter);
+                }
+                
+                generateCsv(data: CsvRow[], headers?: string[]): string {
+                  if (data.length === 0) {
+                    return '';
+                  }
+                  
+                  const actualHeaders = headers || Object.keys(data[0]);
+                  let csv = '';
+                  
+                  // Add headers if requested
+                  if (this.includeHeaders) {
+                    csv += actualHeaders.join(this.delimiter) + '\n';
+                  }
+                  
+                  // Add data rows
+                  for (const row of data) {
+                    csv += this.generateRow(row, actualHeaders) + '\n';
+                  }
+                  
+                  return csv;
+                }
+                
+                async saveToFile(
+                  data: CsvRow[],
+                  filePath: string,
+                  options: { headers?: string[]; includeHeaders?: boolean } = {}
+                ): Promise<string> {
+                  const csv = this.generateCsv(data, options.headers);
+                  
+                  try {
+                    // Ensure directory exists
+                    const dir = path.dirname(filePath);
+                    await fs.mkdir(dir, { recursive: true });
+                    
+                    // Write file
+                    await fs.writeFile(filePath, csv, 'utf8');
+                    
+                    return filePath;
+                  } catch (error) {
+                    console.error('Error saving CSV file:', error);
+                    throw new Error(`Failed to save CSV file: ${error.message}`);
+                  }
+                }
+              }
+              
+              // Example usage:
+              // const csvGenerator = new CsvGenerator();
+              // const data = [
+              //   { name: 'John Doe', email: 'john@example.com', age: 30 },
+              //   { name: 'Jane Smith', email: 'jane@example.com', age: 25 }
+              // ];
+              // 
+              // const csvPath = await csvGenerator.saveToFile(data, 'reports/users.csv');
+              
+              export default CsvGenerator;
+              export type { CsvRow, CsvOptions };
+              ```
+            </code_example>
+          </implementation>
+          <key_points>
+            <point>Geração de CSV a partir de array de objetos</point>
+            <point>Escape correto de valores especiais</point>
+            <point>Opções para personalização (delimitador, cabeçalhos)</point>
+            <point>Salvamento automático em arquivo</point>
+            <point>API simples e flexível</point>
+          </key_points>
+        </example>
+        
+        <example id="file-3" name="Processamento de Imagens">
+          <description>Exemplo de processamento e redimensionamento de imagens</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              // app/utils/image.server.ts
+              import { promises as fs } from 'fs';
+              import path from 'path';
+              import sharp from 'sharp';
+              
+              interface ImageProcessOptions {
+                width?: number;
+                height?: number;
+                quality?: number;
+                format?: 'jpeg' | 'png' | 'webp';
+                fit?: 'cover' | 'contain' | 'fill' | 'inside' | 'outside';
+              }
+              
+              interface ImageInfo {
+                width: number;
+                height: number;
+                format: string;
+                size: number;
+              }
+              
+              class ImageProcessor {
+                async getImageInfo(filePath: string): Promise<ImageInfo> {
+                  try {
+                    const stats = await fs.stat(filePath);
+                    const metadata = await sharp(filePath).metadata();
+                    
+                    return {
+                      width: metadata.width || 0,
+                      height: metadata.height || 0,
+                      format: metadata.format || 'unknown',
+                      size: stats.size
+                    };
+                  } catch (error) {
+                    console.error('Error getting image info:', error);
+                    throw new Error(`Failed to get image info: ${error.message}`);
+                  }
+                }
+                
+                async processImage(
+                  inputPath: string,
+                  outputPath: string,
+                  options: ImageProcessOptions = {}
+                ): Promise<void> {
+                  try {
+                    // Create sharp instance
+                    let processor = sharp(inputPath);
+                    
+                    // Resize if width or height is specified
+                    if (options.width || options.height) {
+                      processor = processor.resize(options.width, options.height, {
+                        fit: options.fit || 'cover'
+                      });
+                    }
+                    
+                    // Set format and quality
+                    if (options.format) {
+                      const formatOptions: any = {};
+                      
+                      if (options.quality) {
+                        formatOptions.quality = options.quality;
+                      }
+                      
+                      switch (options.format) {
+                        case 'jpeg':
+                          processor = processor.jpeg(formatOptions);
+                          break;
+                        case 'png':
+                          processor = processor.png(formatOptions);
+                          break;
+                        case 'webp':
+                          processor = processor.webp(formatOptions);
+                          break;
+                      }
+                    } else if (options.quality) {
+                      // If no format is specified but quality is, use the original format
+                      const metadata = await sharp(inputPath).metadata();
+                      
+                      switch (metadata.format) {
+                        case 'jpeg':
+                          processor = processor.jpeg({ quality: options.quality });
+                          break;
+                        case 'png':
+                          processor = processor.png({ quality: options.quality });
+                          break;
+                        case 'webp':
+                          processor = processor.webp({ quality: options.quality });
+                          break;
+                      }
+                    }
+                    
+                    // Ensure output directory exists
+                    const outputDir = path.dirname(outputPath);
+                    await fs.mkdir(outputDir, { recursive: true });
+                    
+                    // Process and save image
+                    await processor.toFile(outputPath);
+                  } catch (error) {
+                    console.error('Error processing image:', error);
+                    throw new Error(`Failed to process image: ${error.message}`);
+                  }
+                }
+                
+                async createThumbnail(
+                  inputPath: string,
+                  outputPath: string,
+                  width = 200,
+                  height = 200
+                ): Promise<void> {
+                  return this.processImage(inputPath, outputPath, {
+                    width,
+                    height,
+                    fit: 'cover',
+                    quality: 80,
+                    format: 'jpeg'
+                  });
+                }
+                
+                async optimizeImage(
+                  inputPath: string,
+                  outputPath: string,
+                  format: 'jpeg' | 'png' | 'webp' = 'webp',
+                  quality = 80
+                ): Promise<void> {
+                  return this.processImage(inputPath, outputPath, {
+                    format,
+                    quality
+                  });
+                }
+                
+                async createMultipleSizes(
+                  inputPath: string,
+                  outputDir: string,
+                  sizes: Array<{ name: string; width: number; height?: number; quality?: number }> = []
+                ): Promise<string[]> {
+                  const outputPaths: string[] = [];
+                  
+                  // Default sizes if none provided
+                  const defaultSizes = [
+                    { name: 'small', width: 300, quality: 80 },
+                    { name: 'medium', width: 600, quality: 85 },
+                    { name: 'large', width: 1200, quality: 90 }
+                  ];
+                  
+                  const sizesToProcess = sizes.length > 0 ? sizes : defaultSizes;
+                  
+                  // Get file info to determine extension
+                  const inputInfo = path.parse(inputPath);
+                  
+                  for (const size of sizesToProcess) {
+                    const outputFileName = `${inputInfo.name}-${size.name}.webp`;
+                    const outputPath = path.join(outputDir, outputFileName);
+                    
+                    await this.processImage(inputPath, outputPath, {
+                      width: size.width,
+                      height: size.height,
+                      quality: size.quality || 85,
+                      format: 'webp',
+                      fit: 'cover'
+                    });
+                    
+                    outputPaths.push(outputPath);
+                  }
+                  
+                  return outputPaths;
+                }
+              }
+              
+              // Example usage:
+              // const imageProcessor = new ImageProcessor();
+              // 
+              // // Create thumbnail
+              // await imageProcessor.createThumbnail('input.jpg', 'output/thumbnail.jpg');
+              // 
+              // // Optimize image
+              // await imageProcessor.optimizeImage('input.jpg', 'output/optimized.webp');
+              // 
+              // // Create multiple sizes
+              // const sizes = await imageProcessor.createMultipleSizes('input.jpg', 'output/sizes');
+              
+              export default ImageProcessor;
+              export type { ImageProcessOptions, ImageInfo };
+              ```
+            </code_example>
+          </implementation>
+          <key_points>
+            <point>Processamento de imagens com Sharp</point>
+            <point>Redimensionamento e otimização</point>
+            <point>Criação de múltiplos tamanhos</point>
+            <point>Conversão entre formatos</point>
+            <point>API flexível com várias opções</point>
+          </key_points>
+        </example>
+        
+        <example id="file-4" name="Sistema de Logging em Arquivo">
+          <description>Exemplo de sistema de logging com rotação de arquivos</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              // app/utils/logger.server.ts
+              import { promises as fs } from 'fs';
+              import path from 'path';
+              
+              enum LogLevel {
+                DEBUG = 0,
+                INFO = 1,
+                WARN = 2,
+                ERROR = 3
+              }
+              
+              interface LogEntry {
+                timestamp: string;
+                level: string;
+                message: string;
+                meta?: Record<string, any>;
+              }
+              
+              interface LoggerOptions {
+                level?: LogLevel;
+                logDir?: string;
+                maxFileSize?: number; // in bytes
+                maxFiles?: number;
+                enableConsole?: boolean;
+              }
+              
+              class Logger {
+                private level: LogLevel;
+                private logDir: string;
+                private maxFileSize: number;
+                private maxFiles: number;
+                private enableConsole: boolean;
+                private currentLogFile: string;
+                
+                constructor(options: LoggerOptions = {}) {
+                  this.level = options.level || LogLevel.INFO;
+                  this.logDir = options.logDir || path.join(process.cwd(), 'logs');
+                  this.maxFileSize = options.maxFileSize || 10 * 1024 * 1024; // 10MB
+                  this.maxFiles = options.maxFiles || 5;
+                  this.enableConsole = options.enableConsole !== false;
+                  this.currentLogFile = path.join(this.logDir, 'app.log');
+                }
+                
+                private async ensureLogDir(): Promise<void> {
+                  try {
+                    await fs.access(this.logDir);
+                  } catch (error) {
+                    if (error.code === 'ENOENT') {
+                      await fs.mkdir(this.logDir, { recursive: true });
+                    } else {
+                      throw error;
+                    }
+                  }
+                }
+                
+                private async rotateLogFile(): Promise<void> {
+                  try {
+                    const stats = await fs.stat(this.currentLogFile);
+                    
+                    if (stats.size >= this.maxFileSize) {
+                      // Rotate log files
+                      for (let i = this.maxFiles - 1; i > 0; i--) {
+                        const oldFile = path.join(this.logDir, `app.${i}.log`);
+                        const newFile = path.join(this.logDir, `app.${i + 1}.log`);
+                        
+                        try {
+                          await fs.rename(oldFile, newFile);
+                        } catch (error) {
+                          // Ignore errors if file doesn't exist
+                          if (error.code !== 'ENOENT') {
+                            throw error;
+                          }
+                        }
+                      }
+                      
+                      // Rename current log file
+                      await fs.rename(
+                        this.currentLogFile,
+                        path.join(this.logDir, 'app.1.log')
+                      );
+                    }
+                  } catch (error) {
+                    // Ignore errors if file doesn't exist
+                    if (error.code !== 'ENOENT') {
+                      console.error('Error rotating log file:', error);
+                    }
+                  }
+                }
+                
+                private async writeLog(entry: LogEntry): Promise<void> {
+                  try {
+                    await this.ensureLogDir();
+                    await this.rotateLogFile();
+                    
+                    const logLine = JSON.stringify(entry) + '\n';
+                    await fs.appendFile(this.currentLogFile, logLine, 'utf8');
+                  } catch (error) {
+                    console.error('Error writing to log file:', error);
+                  }
+                }
+                
+                private log(level: LogLevel, message: string, meta?: Record<string, any>): void {
+                  if (level < this.level) {
+                    return;
+                  }
+                  
+                  const timestamp = new Date().toISOString();
+                  const levelName = LogLevel[level];
+                  
+                  const entry: LogEntry = {
+                    timestamp,
+                    level: levelName,
+                    message,
+                    meta
+                  };
+                  
+                  // Write to file asynchronously (don't await)
+                  this.writeLog(entry).catch(error => {
+                    console.error('Failed to write log:', error);
+                  });
+                  
+                  // Log to console if enabled
+                  if (this.enableConsole) {
+                    const logMethod = 
+                      level === LogLevel.ERROR ? 'error' :
+                      level === LogLevel.WARN ? 'warn' :
+                      level === LogLevel.INFO ? 'info' : 'debug';
+                    
+                    console[logMethod](`[${timestamp}] [${levelName}] ${message}`, meta || '');
+                  }
+                }
+                
+                debug(message: string, meta?: Record<string, any>): void {
+                  this.log(LogLevel.DEBUG, message, meta);
+                }
+                
+                info(message: string, meta?: Record<string, any>): void {
+                  this.log(LogLevel.INFO, message, meta);
+                }
+                
+                warn(message: string, meta?: Record<string, any>): void {
+                  this.log(LogLevel.WARN, message, meta);
+                }
+                
+                error(message: string, meta?: Record<string, any>): void {
+                  this.log(LogLevel.ERROR, message, meta);
+                }
+                
+                async flush(): Promise<void> {
+                  // This is a placeholder for any pending log operations
+                  // In a real implementation, you might have a queue or buffer to flush
+                  return Promise.resolve();
+                }
+              }
+              
+              // Create a singleton instance
+              const logger = new Logger({
+                level: LogLevel.INFO,
+                maxFileSize: 10 * 1024 * 1024, // 10MB
+                maxFiles: 5,
+                enableConsole: true
+              });
+              
+              export default logger;
+              export { LogLevel };
+              export type { LogEntry, LoggerOptions };
+              ```
+            </code_example>
+          </implementation>
+          <key_points>
+            <point>Sistema de logging com múltiplos níveis</point>
+            <point>Rotação automática de arquivos</point>
+            <point>Escrita assíncrona para não bloquear</point>
+            <point>Log em arquivo e console simultaneamente</point>
+            <point>API simples com métodos para cada nível de log</point>
+          </key_points>
+        </example>
+      </examples>
+    </category>
+    
+    <category id="task-examples" name="Exemplos de Tarefas">
+      <examples>
+        <example id="task-1" name="Sistema de Gerenciamento de Projetos">
+          <description>Exemplo de sistema completo para gerenciamento de projetos e tarefas</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              // app/models/project.server.ts
+              import { v4 as uuidv4 } from 'uuid';
+              
+              interface Task {
+                id: string;
+                title: string;
+                description?: string;
+                status: 'todo' | 'in-progress' | 'review' | 'done';
+                priority: 'low' | 'medium' | 'high' | 'urgent';
+                assigneeId?: string;
+                dueDate?: Date;
+                createdAt: Date;
+                updatedAt: Date;
+                tags: string[];
+              }
+              
+              interface Project {
+                id: string;
+                name: string;
+                description?: string;
+                status: 'planning' | 'active' | 'on-hold' | 'completed' | 'cancelled';
+                ownerId: string;
+                memberIds: string[];
+                tasks: Task[];
+                createdAt: Date;
+                updatedAt: Date;
+              }
+              
+              class ProjectManager {
+                private projects: Map<string, Project> = new Map();
+                
+                createProject(data: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>): Project {
+                  const project: Project = {
+                    ...data,
+                    id: uuidv4(),
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                  };
+                  
+                  this.projects.set(project.id, project);
+                  return project;
+                }
+                
+                getProject(id: string): Project | undefined {
+                  return this.projects.get(id);
+                }
+                
+                getAllProjects(): Project[] {
+                  return Array.from(this.projects.values());
+                }
+                
+                getProjectsByUser(userId: string): Project[] {
+                  return this.getAllProjects().filter(project => 
+                    project.ownerId === userId || project.memberIds.includes(userId)
+                  );
+                }
+                
+                updateProject(id: string, updates: Partial<Omit<Project, 'id' | 'createdAt'>>): Project | null {
+                  const project = this.projects.get(id);
+                  
+                  if (!project) {
+                    return null;
+                  }
+                  
+                  const updatedProject: Project = {
+                    ...project,
+                    ...updates,
+                    updatedAt: new Date()
+                  };
+                  
+                  this.projects.set(id, updatedProject);
+                  return updatedProject;
+                }
+                
+                deleteProject(id: string): boolean {
+                  return this.projects.delete(id);
+                }
+                
+                addTask(projectId: string, taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): Task | null {
+                  const project = this.projects.get(projectId);
+                  
+                  if (!project) {
+                    return null;
+                  }
+                  
+                  const task: Task = {
+                    ...taskData,
+                    id: uuidv4(),
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                  };
+                  
+                  project.tasks.push(task);
+                  project.updatedAt = new Date();
+                  
+                  return task;
+                }
+                
+                getTask(projectId: string, taskId: string): Task | null {
+                  const project = this.projects.get(projectId);
+                  
+                  if (!project) {
+                    return null;
+                  }
+                  
+                  return project.tasks.find(task => task.id === taskId) || null;
+                }
+                
+                updateTask(projectId: string, taskId: string, updates: Partial<Omit<Task, 'id' | 'createdAt'>>): Task | null {
+                  const project = this.projects.get(projectId);
+                  
+                  if (!project) {
+                    return null;
+                  }
+                  
+                  const taskIndex = project.tasks.findIndex(task => task.id === taskId);
+                  
+                  if (taskIndex === -1) {
+                    return null;
+                  }
+                  
+                  const updatedTask: Task = {
+                    ...project.tasks[taskIndex],
+                    ...updates,
+                    updatedAt: new Date()
+                  };
+                  
+                  project.tasks[taskIndex] = updatedTask;
+                  project.updatedAt = new Date();
+                  
+                  return updatedTask;
+                }
+                
+                deleteTask(projectId: string, taskId: string): boolean {
+                  const project = this.projects.get(projectId);
+                  
+                  if (!project) {
+                    return false;
+                  }
+                  
+                  const initialLength = project.tasks.length;
+                  project.tasks = project.tasks.filter(task => task.id !== taskId);
+                  
+                  if (project.tasks.length < initialLength) {
+                    project.updatedAt = new Date();
+                    return true;
+                  }
+                  
+                  return false;
+                }
+                
+                getTasksByStatus(projectId: string, status: Task['status']): Task[] {
+                  const project = this.projects.get(projectId);
+                  
+                  if (!project) {
+                    return [];
+                  }
+                  
+                  return project.tasks.filter(task => task.status === status);
+                }
+                
+                getTasksByAssignee(projectId: string, assigneeId: string): Task[] {
+                  const project = this.projects.get(projectId);
+                  
+                  if (!project) {
+                    return [];
+                  }
+                  
+                  return project.tasks.filter(task => task.assigneeId === assigneeId);
+                }
+                
+                getTasksByTag(projectId: string, tag: string): Task[] {
+                  const project = this.projects.get(projectId);
+                  
+                  if (!project) {
+                    return [];
+                  }
+                  
+                  return project.tasks.filter(task => task.tags.includes(tag));
+                }
+                
+                getProjectStats(projectId: string) {
+                  const project = this.projects.get(projectId);
+                  
+                  if (!project) {
+                    return null;
+                  }
+                  
+                  const tasks = project.tasks;
+                  const totalTasks = tasks.length;
+                  
+                  const statusCounts = {
+                    todo: tasks.filter(t => t.status === 'todo').length,
+                    'in-progress': tasks.filter(t => t.status === 'in-progress').length,
+                    review: tasks.filter(t => t.status === 'review').length,
+                    done: tasks.filter(t => t.status === 'done').length
+                  };
+                  
+                  const priorityCounts = {
+                    low: tasks.filter(t => t.priority === 'low').length,
+                    medium: tasks.filter(t => t.priority === 'medium').length,
+                    high: tasks.filter(t => t.priority === 'high').length,
+                    urgent: tasks.filter(t => t.priority === 'urgent').length
+                  };
+                  
+                  const overdueTasks = tasks.filter(task => 
+                    task.dueDate && task.dueDate < new Date() && task.status !== 'done'
+                  ).length;
+                  
+                  const completionRate = totalTasks > 0 
+                    ? Math.round((statusCounts.done / totalTasks) * 100) 
+                    : 0;
+                  
+                  return {
+                    totalTasks,
+                    statusCounts,
+                    priorityCounts,
+                    overdueTasks,
+                    completionRate
+                  };
+                }
+              }
+              
+              // Create a singleton instance
+              const projectManager = new ProjectManager();
+              
+              export default projectManager;
+              export type { Project, Task };
+              ```
+            </code_example>
+          </implementation>
+          <key_points>
+            <point>Gerenciamento completo de projetos e tarefas</point>
+            <point>Operações CRUD para projetos e tarefas</point>
+            <point>Filtros para tarefas por status, assignee e tags</point>
+            <point>Estatísticas do projeto</point>
+            <point>API simples e intuitiva</point>
+          </key_points>
+        </example>
+        
+        <example id="task-2" name="Agendador de Tarefas Recorrentes">
+          <description>Exemplo de sistema para agendamento de tarefas recorrentes</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              // app/utils/scheduler.server.ts
+              import { v4 as uuidv4 } from 'uuid';
+              
+              enum RecurrenceType {
+                DAILY = 'daily',
+                WEEKLY = 'weekly',
+                MONTHLY = 'monthly',
+                YEARLY = 'yearly'
+              }
+              
+              enum Weekday {
+                SUNDAY = 0,
+                MONDAY = 1,
+                TUESDAY = 2,
+                WEDNESDAY = 3,
+                THURSDAY = 4,
+                FRIDAY = 5,
+                SATURDAY = 6
+              }
+              
+              interface RecurringTask {
+                id: string;
+                title: string;
+                description?: string;
+                recurrenceType: RecurrenceType;
+                interval: number; // e.g., every 2 days, every 3 weeks
+                weekday?: Weekday; // For weekly recurrence
+                dayOfMonth?: number; // For monthly recurrence (1-31)
+                monthOfYear?: number; // For yearly recurrence (1-12)
+                startDate: Date;
+                endDate?: Date;
+                maxOccurrences?: number;
+                createdAt: Date;
+                updatedAt: Date;
+              }
+              
+              interface TaskOccurrence {
+                id: string;
+                recurringTaskId: string;
+                title: string;
+                description?: string;
+                scheduledDate: Date;
+                completed: boolean;
+                completedAt?: Date;
+              }
+              
+              class TaskScheduler {
+                private recurringTasks: Map<string, RecurringTask> = new Map();
+                private taskOccurrences: Map<string, TaskOccurrence> = new Map();
+                
+                createRecurringTask(data: Omit<RecurringTask, 'id' | 'createdAt' | 'updatedAt'>): RecurringTask {
+                  const task: RecurringTask = {
+                    ...data,
+                    id: uuidv4(),
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                  };
+                  
+                  this.recurringTasks.set(task.id, task);
+                  return task;
+                }
+                
+                getRecurringTask(id: string): RecurringTask | undefined {
+                  return this.recurringTasks.get(id);
+                }
+                
+                getAllRecurringTasks(): RecurringTask[] {
+                  return Array.from(this.recurringTasks.values());
+                }
+                
+                updateRecurringTask(id: string, updates: Partial<Omit<RecurringTask, 'id' | 'createdAt'>>): RecurringTask | null {
+                  const task = this.recurringTasks.get(id);
+                  
+                  if (!task) {
+                    return null;
+                  }
+                  
+                  const updatedTask: RecurringTask = {
+                    ...task,
+                    ...updates,
+                    updatedAt: new Date()
+                  };
+                  
+                  this.recurringTasks.set(id, updatedTask);
+                  return updatedTask;
+                }
+                
+                deleteRecurringTask(id: string): boolean {
+                  return this.recurringTasks.delete(id);
+                }
+                
+                generateOccurrences(taskId: string, startDate?: Date, endDate?: Date): TaskOccurrence[] {
+                  const task = this.recurringTasks.get(taskId);
+                  
+                  if (!task) {
+                    return [];
+                  }
+                  
+                  const occurrences: TaskOccurrence[] = [];
+                  const start = startDate || new Date();
+                  const end = endDate || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 90 days from now
+                  
+                  let currentDate = new Date(task.startDate);
+                  
+                  // If current date is before start date, move to start date
+                  if (currentDate < start) {
+                    currentDate = new Date(start);
+                  }
+                  
+                  let occurrenceCount = 0;
+                  const maxOccurrences = task.maxOccurrences || Infinity;
+                  
+                  while (currentDate <= end && occurrenceCount < maxOccurrences) {
+                    // Check if current date matches recurrence pattern
+                    if (this.doesDateMatchRecurrence(currentDate, task)) {
+                      // Check if we've passed the end date if specified
+                      if (!task.endDate || currentDate <= task.endDate) {
+                        occurrences.push({
+                          id: uuidv4(),
+                          recurringTaskId: task.id,
+                          title: task.title,
+                          description: task.description,
+                          scheduledDate: new Date(currentDate),
+                          completed: false
+                        });
+                        
+                        occurrenceCount++;
+                      }
+                    }
+                    
+                    // Move to next potential occurrence
+                    this.incrementDateByRecurrence(currentDate, task);
+                  }
+                  
+                  return occurrences;
+                }
+                
+                private doesDateMatchRecurrence(date: Date, task: RecurringTask): boolean {
+                  // Check if date is before start date
+                  if (date < task.startDate) {
+                    return false;
+                  }
+                  
+                  // Check if date is after end date
+                  if (task.endDate && date > task.endDate) {
+                    return false;
+                  }
+                  
+                  switch (task.recurrenceType) {
+                    case RecurrenceType.DAILY:
+                      return true;
+                      
+                    case RecurrenceType.WEEKLY:
+                      if (task.weekday === undefined) {
+                        return true;
+                      }
+                      return date.getDay() === task.weekday;
+                      
+                    case RecurrenceType.MONTHLY:
+                      if (task.dayOfMonth === undefined) {
+                        return true;
+                      }
+                      return date.getDate() === task.dayOfMonth;
+                      
+                    case RecurrenceType.YEARLY:
+                      if (task.monthOfYear === undefined || task.dayOfMonth === undefined) {
+                        return true;
+                      }
+                      return date.getMonth() + 1 === task.monthOfYear && date.getDate() === task.dayOfMonth;
+                      
+                    default:
+                      return false;
+                  }
+                }
+                
+                private incrementDateByRecurrence(date: Date, task: RecurringTask): void {
+                  switch (task.recurrenceType) {
+                    case RecurrenceType.DAILY:
+                      date.setDate(date.getDate() + task.interval);
+                      break;
+                      
+                    case RecurrenceType.WEEKLY:
+                      date.setDate(date.getDate() + (7 * task.interval));
+                      break;
+                      
+                    case RecurrenceType.MONTHLY:
+                      date.setMonth(date.getMonth() + task.interval);
+                      break;
+                      
+                    case RecurrenceType.YEARLY:
+                      date.setFullYear(date.getFullYear() + task.interval);
+                      break;
+                  }
+                }
+                
+                getUpcomingOccurrences(daysAhead = 30): TaskOccurrence[] {
+                  const now = new Date();
+                  const endDate = new Date(Date.now() + daysAhead * 24 * 60 * 60 * 1000);
+                  
+                  const allOccurrences: TaskOccurrence[] = [];
+                  
+                  for (const task of this.recurringTasks.values()) {
+                    const occurrences = this.generateOccurrences(task.id, now, endDate);
+                    allOccurrences.push(...occurrences);
+                  }
+                  
+                  // Sort by scheduled date
+                  return allOccurrences.sort((a, b) => 
+                    a.scheduledDate.getTime() - b.scheduledDate.getTime()
+                  );
+                }
+                
+                markOccurrenceCompleted(occurrenceId: string): boolean {
+                  const occurrence = this.taskOccurrences.get(occurrenceId);
+                  
+                  if (!occurrence) {
+                    return false;
+                  }
+                  
+                  occurrence.completed = true;
+                  occurrence.completedAt = new Date();
+                  
+                  return true;
+                }
+              }
+              
+              // Create a singleton instance
+              const taskScheduler = new TaskScheduler();
+              
+              export default taskScheduler;
+              export { RecurrenceType, Weekday };
+              export type { RecurringTask, TaskOccurrence };
+              ```
+            </code_example>
+          </implementation>
+          <key_points>
+            <point>Sistema completo para tarefas recorrentes</point>
+            <point>Múltiplos tipos de recorrência (diário, semanal, mensal, anual)</point>
+            <point>Geração de ocorrências com base em padrões</point>
+            <point>Controle de datas de início e fim</point>
+            <point>API para gerenciar ocorrências</point>
+          </key_points>
+        </example>
+        
+        <example id="task-3" name="Sistema de Notificações de Tarefas">
+          <description>Exemplo de sistema para enviar notificações sobre tarefas</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              // app/utils/notifications.server.ts
+              import { v4 as uuidv4 } from 'uuid';
+              
+              enum NotificationType {
+                TASK_ASSIGNED = 'task_assigned',
+                TASK_DUE_SOON = 'task_due_soon',
+                TASK_OVERDUE = 'task_overdue',
+                TASK_COMPLETED = 'task_completed',
+                PROJECT_UPDATED = 'project_updated'
+              }
+              
+              enum NotificationChannel {
+                EMAIL = 'email',
+                IN_APP = 'in_app',
+                PUSH = 'push'
+              }
+              
+              interface Notification {
+                id: string;
+                type: NotificationType;
+                title: string;
+                message: string;
+                userId: string;
+                channels: NotificationChannel[];
+                data?: Record<string, any>;
+                read: boolean;
+                readAt?: Date;
+                sent: boolean;
+                sentAt?: Date;
+                createdAt: Date;
+              }
+              
+              interface NotificationPreference {
+                userId: string;
+                type: NotificationType;
+                channels: NotificationChannel[];
+                enabled: boolean;
+              }
+              
+              class NotificationManager {
+                private notifications: Map<string, Notification> = new Map();
+                private preferences: Map<string, NotificationPreference[]> = new Map();
+                
+                createNotification(
+                  type: NotificationType,
+                  title: string,
+                  message: string,
+                  userId: string,
+                  data?: Record<string, any>
+                ): Notification {
+                  const userPreferences = this.preferences.get(userId) || [];
+                  const preference = userPreferences.find(p => p.type === type);
+                  
+                  // Determine channels based on preferences or defaults
+                  let channels: NotificationChannel[] = [NotificationChannel.IN_APP];
+                  
+                  if (preference) {
+                    if (preference.enabled) {
+                      channels = preference.channels;
+                    }
+                  } else {
+                    // Default preferences
+                    switch (type) {
+                      case NotificationType.TASK_ASSIGNED:
+                      case NotificationType.TASK_COMPLETED:
+                        channels = [NotificationChannel.IN_APP, NotificationChannel.EMAIL];
+                        break;
+                      case NotificationType.TASK_DUE_SOON:
+                      case NotificationType.TASK_OVERDUE:
+                        channels = [NotificationChannel.IN_APP, NotificationChannel.EMAIL, NotificationChannel.PUSH];
+                        break;
+                      case NotificationType.PROJECT_UPDATED:
+                        channels = [NotificationChannel.IN_APP];
+                        break;
+                    }
+                  }
+                  
+                  const notification: Notification = {
+                    id: uuidv4(),
+                    type,
+                    title,
+                    message,
+                    userId,
+                    channels,
+                    data,
+                    read: false,
+                    sent: false,
+                    createdAt: new Date()
+                  };
+                  
+                  this.notifications.set(notification.id, notification);
+                  
+                  // Send notification asynchronously
+                  this.sendNotification(notification).catch(error => {
+                    console.error(`Failed to send notification ${notification.id}:`, error);
+                  });
+                  
+                  return notification;
+                }
+                
+                getNotification(id: string): Notification | undefined {
+                  return this.notifications.get(id);
+                }
+                
+                getUserNotifications(userId: string, unreadOnly = false): Notification[] {
+                  const userNotifications = Array.from(this.notifications.values())
+                    .filter(notification => notification.userId === userId);
+                  
+                  return unreadOnly 
+                    ? userNotifications.filter(n => !n.read)
+                    : userNotifications;
+                }
+                
+                markAsRead(notificationId: string): boolean {
+                  const notification = this.notifications.get(notificationId);
+                  
+                  if (!notification || notification.read) {
+                    return false;
+                  }
+                  
+                  notification.read = true;
+                  notification.readAt = new Date();
+                  
+                  return true;
+                }
+                
+                markAllAsRead(userId: string): number {
+                  let count = 0;
+                  
+                  for (const notification of this.notifications.values()) {
+                    if (notification.userId === userId && !notification.read) {
+                      notification.read = true;
+                      notification.readAt = new Date();
+                      count++;
+                    }
+                  }
+                  
+                  return count;
+                }
+                
+                setPreferences(userId: string, preferences: NotificationPreference[]): void {
+                  this.preferences.set(userId, preferences);
+                }
+                
+                getPreferences(userId: string): NotificationPreference[] {
+                  return this.preferences.get(userId) || [];
+                }
+                
+                private async sendNotification(notification: Notification): Promise<void> {
+                  try {
+                    for (const channel of notification.channels) {
+                      switch (channel) {
+                        case NotificationChannel.EMAIL:
+                          await this.sendEmailNotification(notification);
+                          break;
+                        case NotificationChannel.IN_APP:
+                          // In-app notifications are stored and retrieved when needed
+                          break;
+                        case NotificationChannel.PUSH:
+                          await this.sendPushNotification(notification);
+                          break;
+                      }
+                    }
+                    
+                    notification.sent = true;
+                    notification.sentAt = new Date();
+                  } catch (error) {
+                    console.error(`Error sending notification ${notification.id}:`, error);
+                    throw error;
+                  }
+                }
+                
+                private async sendEmailNotification(notification: Notification): Promise<void> {
+                  // Implementation would depend on email service
+                  console.log(`Sending email to ${notification.userId}: ${notification.title} - ${notification.message}`);
+                  
+                  // In a real implementation, this would use an email service
+                  // await emailService.send({
+                  //   to: getUserEmail(notification.userId),
+                  //   subject: notification.title,
+                  //   body: notification.message
+                  // });
+                }
+                
+                private async sendPushNotification(notification: Notification): Promise<void> {
+                  // Implementation would depend on push notification service
+                  console.log(`Sending push notification to ${notification.userId}: ${notification.title} - ${notification.message}`);
+                  
+                  // In a real implementation, this would use a push notification service
+                  // await pushService.send({
+                  //   userId: notification.userId,
+                  //   title: notification.title,
+                  //   body: notification.message,
+                  //   data: notification.data
+                  // });
+                }
+                
+                // Convenience methods for common notification types
+                notifyTaskAssigned(userId: string, taskTitle: string, taskId: string): Notification {
+                  return this.createNotification(
+                    NotificationType.TASK_ASSIGNED,
+                    'Nova tarefa atribuída',
+                    `Você foi atribuído à tarefa: ${taskTitle}`,
+                    userId,
+                    { taskId }
+                  );
+                }
+                
+                notifyTaskDueSoon(userId: string, taskTitle: string, taskId: string, dueDate: Date): Notification {
+                  const formattedDate = dueDate.toLocaleDateString('pt-BR');
+                  return this.createNotification(
+                    NotificationType.TASK_DUE_SOON,
+                    'Tarefa próxima do vencimento',
+                    `A tarefa "${taskTitle}" vence em ${formattedDate}`,
+                    userId,
+                    { taskId, dueDate: dueDate.toISOString() }
+                  );
+                }
+                
+                notifyTaskOverdue(userId: string, taskTitle: string, taskId: string, dueDate: Date): Notification {
+                  const formattedDate = dueDate.toLocaleDateString('pt-BR');
+                  return this.createNotification(
+                    NotificationType.TASK_OVERDUE,
+                    'Tarefa atrasada',
+                    `A tarefa "${taskTitle}" venceu em ${formattedDate}`,
+                    userId,
+                    { taskId, dueDate: dueDate.toISOString() }
+                  );
+                }
+                
+                notifyTaskCompleted(userId: string, taskTitle: string, taskId: string, completedBy: string): Notification {
+                  return this.createNotification(
+                    NotificationType.TASK_COMPLETED,
+                    'Tarefa concluída',
+                    `A tarefa "${taskTitle}" foi concluída por ${completedBy}`,
+                    userId,
+                    { taskId, completedBy }
+                  );
+                }
+                
+                notifyProjectUpdated(userId: string, projectName: string, projectId: string, updatedBy: string): Notification {
+                  return this.createNotification(
+                    NotificationType.PROJECT_UPDATED,
+                    'Projeto atualizado',
+                    `O projeto "${projectName}" foi atualizado por ${updatedBy}`,
+                    userId,
+                    { projectId, updatedBy }
+                  );
+                }
+              }
+              
+              // Create a singleton instance
+              const notificationManager = new NotificationManager();
+              
+              export default notificationManager;
+              export { NotificationType, NotificationChannel };
+              export type { Notification, NotificationPreference };
+              ```
+            </code_example>
+          </implementation>
+          <key_points>
+            <point>Sistema completo de notificações</point>
+            <point>Múltiplos canais de notificação (email, in-app, push)</point>
+            <point>Preferências personalizáveis por usuário</point>
+            <point>Métodos de conveniência para tipos comuns</point>
+            <point>Envio assíncrono de notificações</point>
+          </key_points>
+        </example>
+        
+        <example id="task-4" name="Integração com Calendário Externo">
+          <description>Exemplo de integração com serviços de calendário externos</description>
+          <implementation>
+            <code_example>
+              ```tsx
+              // app/utils/calendar.server.ts
+              import { v4 as uuidv4 } from 'uuid';
+              
+              enum CalendarProvider {
+                GOOGLE = 'google',
+                OUTLOOK = 'outlook',
+                APPLE = 'apple'
+              }
+              
+              interface CalendarEvent {
+                id: string;
+                title: string;
+                description?: string;
+                startTime: Date;
+                endTime: Date;
+                location?: string;
+                attendees?: string[];
+                reminders?: {
+                  minutes: number;
+                  method: 'email' | 'popup';
+                }[];
+                externalId?: {
+                  provider: CalendarProvider;
+                  id: string;
+                };
+              }
+              
+              interface CalendarIntegration {
+                provider: CalendarProvider;
+                isConnected: boolean;
+                accessToken?: string;
+                refreshToken?: string;
+                expiresAt?: Date;
+              }
+              
+              abstract class CalendarService {
+                abstract createEvent(event: Omit<CalendarEvent, 'id'>): Promise<CalendarEvent>;
+                abstract updateEvent(id: string, updates: Partial<CalendarEvent>): Promise<CalendarEvent>;
+                abstract deleteEvent(id: string): Promise<boolean>;
+                abstract getEvents(startDate: Date, endDate: Date): Promise<CalendarEvent[]>;
+                abstract syncEvents(events: CalendarEvent[]): Promise<CalendarEvent[]>;
+                abstract authenticate(code: string): Promise<{ accessToken: string; refreshToken: string; expiresAt: Date }>;
+                abstract refreshAccessToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string; expiresAt: Date }>;
+              }
+              
+              class GoogleCalendarService extends CalendarService {
+                private clientId: string;
+                private clientSecret: string;
+                private redirectUri: string;
+                
+                constructor(clientId: string, clientSecret: string, redirectUri: string) {
+                  super();
+                  this.clientId = clientId;
+                  this.clientSecret = clientSecret;
+                  this.redirectUri = redirectUri;
+                }
+                
+                async createEvent(event: Omit<CalendarEvent, 'id'>): Promise<CalendarEvent> {
+                  // Implementation would use Google Calendar API
+                  console.log('Creating event in Google Calendar:', event);
+                  
+                  // In a real implementation, this would make API calls to Google Calendar
+                  // const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+                  //   method: 'POST',
+                  //   headers: {
+                  //     'Authorization': `Bearer ${accessToken}`,
+                  //     'Content-Type': 'application/json'
+                  //   },
+                  //   body: JSON.stringify({
+                  //     summary: event.title,
+                  //     description: event.description,
+                  //     start: {
+                  //       dateTime: event.startTime.toISOString(),
+                  //       timeZone: 'America/Sao_Paulo'
+                  //     },
+                  //     end: {
+                  //       dateTime: event.endTime.toISOString(),
+                  //       timeZone: 'America/Sao_Paulo'
+                  //     },
+                  //     location: event.location,
+                  //     attendees: event.attendees?.map(email => ({ email })),
+                  //     reminders: {
+                  //       useDefault: false,
+                  //       overrides: event.reminders?.map(reminder => ({
+                  //         method: reminder.method === 'email' ? 'email' : 'popup',
+                  //         minutes: reminder.minutes
+                  //       }))
+                  //     }
+                  //   })
+                  // });
+                  // 
+                  // const data = await response.json();
+                  // 
+                  // return {
+                  //   id: data.id,
+                  //   ...event,
+                  //   externalId: {
+                  //     provider: CalendarProvider.GOOGLE,
+                  //     id: data.id
+                  //   }
+                  // };
+                  
+                  // Mock implementation
+                  return {
+                    id: uuidv4(),
+                    ...event,
+                    externalId: {
+                      provider: CalendarProvider.GOOGLE,
+                      id: `google-${uuidv4()}`
+                    }
+                  };
+                }
+                
+                async updateEvent(id: string, updates: Partial<CalendarEvent>): Promise<CalendarEvent> {
+                  // Implementation would use Google Calendar API
+                  console.log('Updating event in Google Calendar:', id, updates);
+                  
+                  // Mock implementation
+                  return {
+                    id,
+                    title: updates.title || 'Updated Event',
+                    description: updates.description,
+                    startTime: updates.startTime || new Date(),
+                    endTime: updates.endTime || new Date(),
+                    location: updates.location,
+                    attendees: updates.attendees,
+                    reminders: updates.reminders,
+                    externalId: {
+                      provider: CalendarProvider.GOOGLE,
+                      id: `google-${id}`
+                    }
+                  };
+                }
+                
+                async deleteEvent(id: string): Promise<boolean> {
+                  // Implementation would use Google Calendar API
+                  console.log('Deleting event from Google Calendar:', id);
+                  
+                  // Mock implementation
+                  return true;
+                }
+                
+                async getEvents(startDate: Date, endDate: Date): Promise<CalendarEvent[]> {
+                  // Implementation would use Google Calendar API
+                  console.log('Getting events from Google Calendar:', startDate, endDate);
+                  
+                  // Mock implementation
+                  return [];
+                }
+                
+                async syncEvents(events: CalendarEvent[]): Promise<CalendarEvent[]> {
+                  // Implementation would sync events with Google Calendar
+                  console.log('Syncing events with Google Calendar:', events.length);
+                  
+                  // Mock implementation
+                  return events;
+                }
+                
+                async authenticate(code: string): Promise<{ accessToken: string; refreshToken: string; expiresAt: Date }> {
+                  // Implementation would exchange code for tokens
+                  console.log('Authenticating with Google Calendar:', code);
+                  
+                  // Mock implementation
+                  return {
+                    accessToken: 'mock-access-token',
+                    refreshToken: 'mock-refresh-token',
+                    expiresAt: new Date(Date.now() + 3600 * 1000) // 1 hour from now
+                  };
+                }
+                
+                async refreshAccessToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string; expiresAt: Date }> {
+                  // Implementation would refresh access token
+                  console.log('Refreshing Google Calendar access token:', refreshToken);
+                  
+                  // Mock implementation
+                  return {
+                    accessToken: 'new-mock-access-token',
+                    refreshToken: 'new-mock-refresh-token',
+                    expiresAt: new Date(Date.now() + 3600 * 1000) // 1 hour from now
+                  };
+                }
+              }
+              
+              class OutlookCalendarService extends CalendarService {
+                private clientId: string;
+                private clientSecret: string;
+                private redirectUri: string;
+                
+                constructor(clientId: string, clientSecret: string, redirectUri: string) {
+                  super();
+                  this.clientId = clientId;
+                  this.clientSecret = clientSecret;
+                  this.redirectUri = redirectUri;
+                }
+                
+                async createEvent(event: Omit<CalendarEvent, 'id'>): Promise<CalendarEvent> {
+                  // Implementation would use Outlook Calendar API
+                  console.log('Creating event in Outlook Calendar:', event);
+                  
+                  // Mock implementation
+                  return {
+                    id: uuidv4(),
+                    ...event,
+                    externalId: {
+                      provider: CalendarProvider.OUTLOOK,
+                      id: `outlook-${uuidv4()}`
+                    }
+                  };
+                }
+                
+                async updateEvent(id: string, updates: Partial<CalendarEvent>): Promise<CalendarEvent> {
+                  // Implementation would use Outlook Calendar API
+                  console.log('Updating event in Outlook Calendar:', id, updates);
+                  
+                  // Mock implementation
+                  return {
+                    id,
+                    title: updates.title || 'Updated Event',
+                    description: updates.description,
+                    startTime: updates.startTime || new Date(),
+                    endTime: updates.endTime || new Date(),
+                    location: updates.location,
+                    attendees: updates.attendees,
+                    reminders: updates.reminders,
+                    externalId: {
+                      provider: CalendarProvider.OUTLOOK,
+                      id: `outlook-${id}`
+                    }
+                  };
+                }
+                
+                async deleteEvent(id: string): Promise<boolean> {
+                  // Implementation would use Outlook Calendar API
+                  console.log('Deleting event from Outlook Calendar:', id);
+                  
+                  // Mock implementation
+                  return true;
+                }
+                
+                async getEvents(startDate: Date, endDate: Date): Promise<CalendarEvent[]> {
+                  // Implementation would use Outlook Calendar API
+                  console.log('Getting events from Outlook Calendar:', startDate, endDate);
+                  
+                  // Mock implementation
+                  return [];
+                }
+                
+                async syncEvents(events: CalendarEvent[]): Promise<CalendarEvent[]> {
+                  // Implementation would sync events with Outlook Calendar
+                  console.log('Syncing events with Outlook Calendar:', events.length);
+                  
+                  // Mock implementation
+                  return events;
+                }
+                
+                async authenticate(code: string): Promise<{ accessToken: string; refreshToken: string; expiresAt: Date }> {
+                  // Implementation would exchange code for tokens
+                  console.log('Authenticating with Outlook Calendar:', code);
+                  
+                  // Mock implementation
+                  return {
+                    accessToken: 'mock-access-token',
+                    refreshToken: 'mock-refresh-token',
+                    expiresAt: new Date(Date.now() + 3600 * 1000) // 1 hour from now
+                  };
+                }
+                
+                async refreshAccessToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string; expiresAt: Date }> {
+                  // Implementation would refresh access token
+                  console.log('Refreshing Outlook Calendar access token:', refreshToken);
+                  
+                  // Mock implementation
+                  return {
+                    accessToken: 'new-mock-access-token',
+                    refreshToken: 'new-mock-refresh-token',
+                    expiresAt: new Date(Date.now() + 3600 * 1000) // 1 hour from now
+                  };
+                }
+              }
+              
+              class CalendarManager {
+                private services: Map<CalendarProvider, CalendarService> = new Map();
+                private integrations: Map<string, CalendarIntegration> = new Map();
+                
+                constructor() {
+                  // Initialize services (in a real app, this would be done with proper credentials)
+                  this.services.set(
+                    CalendarProvider.GOOGLE,
+                    new GoogleCalendarService(
+                      process.env.GOOGLE_CLIENT_ID || '',
+                      process.env.GOOGLE_CLIENT_SECRET || '',
+                      process.env.GOOGLE_REDIRECT_URI || ''
+                    )
+                  );
+                  
+                  this.services.set(
+                    CalendarProvider.OUTLOOK,
+                    new OutlookCalendarService(
+                      process.env.OUTLOOK_CLIENT_ID || '',
+                      process.env.OUTLOOK_CLIENT_SECRET || '',
+                      process.env.OUTLOOK_REDIRECT_URI || ''
+                    )
+                  );
+                }
+                
+                async connectCalendar(
+                  userId: string,
+                  provider: CalendarProvider,
+                  code: string
+                ): Promise<CalendarIntegration> {
+                  const service = this.services.get(provider);
+                  
+                  if (!service) {
+                    throw new Error(`Unsupported calendar provider: ${provider}`);
+                  }
+                  
+                  try {
+                    const { accessToken, refreshToken, expiresAt } = await service.authenticate(code);
+                    
+                    const integration: CalendarIntegration = {
+                      provider,
+                      isConnected: true,
+                      accessToken,
+                      refreshToken,
+                      expiresAt
+                    };
+                    
+                    this.integrations.set(`${userId}-${provider}`, integration);
+                    
+                    return integration;
+                  } catch (error) {
+                    console.error(`Error connecting to ${provider} calendar:`, error);
+                    throw new Error(`Failed to connect to ${provider} calendar`);
+                  }
+                }
+                
+                async disconnectCalendar(userId: string, provider: CalendarProvider): Promise<boolean> {
+                  const key = `${userId}-${provider}`;
+                  const integration = this.integrations.get(key);
+                  
+                  if (!integration) {
+                    return false;
+                  }
+                  
+                  integration.isConnected = false;
+                  integration.accessToken = undefined;
+                  integration.refreshToken = undefined;
+                  integration.expiresAt = undefined;
+                  
+                  return true;
+                }
+                
+                getIntegration(userId: string, provider: CalendarProvider): CalendarIntegration | undefined {
+                  return this.integrations.get(`${userId}-${provider}`);
+                }
+                
+                async createEvent(
+                  userId: string,
+                  provider: CalendarProvider,
+                  event: Omit<CalendarEvent, 'id'>
+                ): Promise<CalendarEvent> {
+                  const integration = this.getIntegration(userId, provider);
+                  
+                  if (!integration?.isConnected) {
+                    throw new Error(`Not connected to ${provider} calendar`);
+                  }
+                  
+                  const service = this.services.get(provider);
+                  
+                  if (!service) {
+                    throw new Error(`Unsupported calendar provider: ${provider}`);
+                  }
+                  
+                  // Check if access token is expired and refresh if needed
+                  if (integration.expiresAt && integration.expiresAt <= new Date()) {
+                    if (!integration.refreshToken) {
+                      throw new Error(`Access token expired and no refresh token available for ${provider} calendar`);
+                    }
+                    
+                    try {
+                      const { accessToken, refreshToken, expiresAt } = await service.refreshAccessToken(integration.refreshToken);
+                      
+                      integration.accessToken = accessToken;
+                      integration.refreshToken = refreshToken;
+                      integration.expiresAt = expiresAt;
+                    } catch (error) {
+                      console.error(`Error refreshing ${provider} access token:`, error);
+                      throw new Error(`Failed to refresh ${provider} access token`);
+                    }
+                  }
+                  
+                  return service.createEvent(event);
+                }
+                
+                async syncEvents(
+                  userId: string,
+                  provider: CalendarProvider,
+                  events: CalendarEvent[]
+                ): Promise<CalendarEvent[]> {
+                  const integration = this.getIntegration(userId, provider);
+                  
+                  if (!integration?.isConnected) {
+                    throw new Error(`Not connected to ${provider} calendar`);
+                  }
+                  
+                  const service = this.services.get(provider);
+                  
+                  if (!service) {
+                    throw new Error(`Unsupported calendar provider: ${provider}`);
+                  }
+                  
+                  // Check if access token is expired and refresh if needed
+                  if (integration.expiresAt && integration.expiresAt <= new Date()) {
+                    if (!integration.refreshToken) {
+                      throw new Error(`Access token expired and no refresh token available for ${provider} calendar`);
+                    }
+                    
+                    try {
+                      const { accessToken, refreshToken, expiresAt } = await service.refreshAccessToken(integration.refreshToken);
+                      
+                      integration.accessToken = accessToken;
+                      integration.refreshToken = refreshToken;
+                      integration.expiresAt = expiresAt;
+                    } catch (error) {
+                      console.error(`Error refreshing ${provider} access token:`, error);
+                      throw new Error(`Failed to refresh ${provider} access token`);
+                    }
+                  }
+                  
+                  return service.syncEvents(events);
+                }
+              }
+              
+              // Create a singleton instance
+              const calendarManager = new CalendarManager();
+              
+              export default calendarManager;
+              export { CalendarProvider };
+              export type { CalendarEvent, CalendarIntegration };
+              ```
+            </code_example>
+          </implementation>
+          <key_points>
+            <point>Abstração para múltiplos provedores de calendário</point>
+            <point>Autenticação e gerenciamento de tokens</point>
+            <point>CRUD completo para eventos de calendário</point>
+            <point>Sincronização de eventos entre sistemas</point>
+            <point>Atualização automática de tokens expirados</point>
+          </key_points>
+        </example>
+      </examples>
+    </category>
+  </categories>
+</examples>

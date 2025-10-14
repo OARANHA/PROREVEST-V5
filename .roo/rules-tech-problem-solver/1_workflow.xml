@@ -1,0 +1,136 @@
+<workflow_instructions>
+  <mode_overview>
+    Este modo é especializado em resolver problemas técnicos complexos de forma ágil, com foco em React Router v7, Supabase e design de UI. O objetivo é fornecer soluções imediatas, executáveis e otimizadas para produção, priorizando clareza, eficiência e melhores práticas.
+  </mode_overview>
+
+  <initialization_steps>
+    <step number="1">
+      <title>Analisar o Problema</title>
+      <description>
+        Entender rapidamente a natureza do problema técnico apresentado pelo usuário,
+        identificando os componentes afetados e o contexto da aplicação.
+      </description>
+      <actions>
+        <action>Identificar o tipo de problema (roteamento, autenticação, estado, UI, performance)</action>
+        <action>Determinar as tecnologias envolvidas (React Router v7, Supabase, etc.)</action>
+        <action>Entender o impacto do problema na aplicação</action>
+      </actions>
+    </step>
+    
+    <step number="2">
+      <title>Coletar Contexto</title>
+      <description>
+        Obter informações necessárias sobre a estrutura do projeto e implementações existentes.
+      </description>
+      <tools>
+        <tool>search_files - Encontrar arquivos relevantes</tool>
+        <tool>read_file - Examinar implementações específicas</tool>
+        <tool>list_code_definition_names - Entender estrutura do código</tool>
+      </tools>
+    </step>
+  </initialization_steps>
+
+  <main_workflow>
+    <phase name="diagnostico_rapido">
+      <title>Diagnóstico Rápido</title>
+      <description>
+        Identificar a causa raiz do problema de forma eficiente, focando nos pontos críticos.
+      </description>
+      <steps>
+        <step>Analisar mensagens de erro ou comportamento inesperado</step>
+        <step>Verificar configurações relevantes (rotas, autenticação, estado)</step>
+        <step>Identificar padrões anti-comuns ou más práticas</step>
+        <step>Determinar o escopo do problema (isolado ou sistêmico)</step>
+      </steps>
+    </phase>
+
+    <phase name="solucao_imediata">
+      <title>Solução Imediata</title>
+      <description>
+        Implementar uma solução rápida e eficaz que resolva o problema principal.
+      </description>
+      <steps>
+        <step>Propor abordagem de solução concisa</step>
+        <step>Implementar correções críticas</step>
+        <step>Garantir compatibilidade com código existente</step>
+        <step>Adicionar logging ou monitoramento se necessário</step>
+      </steps>
+    </phase>
+
+    <phase name="otimizacao">
+      <title>Otimização</title>
+      <description>
+        Refinar a solução para garantir performance, segurança e mantenabilidade.
+      </description>
+      <steps>
+        <step>Otimizar performance da solução</step>
+        <step>Aplicar melhores práticas de segurança</step>
+        <step>Garantir responsividade e acessibilidade da UI</step>
+        <step>Documentar mudanças importantes</step>
+      </steps>
+    </phase>
+  </main_workflow>
+
+  <problem_specific_workflows>
+    <workflow type="react_router_v7">
+      <title>Problemas de Roteamento</title>
+      <steps>
+        <step>Verificar configuração de rotas e estrutura</step>
+        <step>Identificar problemas com nested routes ou layouts</step>
+        <step>Corrigir problemas de navegação e parâmetros</step>
+        <step>Implementar lazy loading se necessário</step>
+      </steps>
+    </workflow>
+
+    <workflow type="supabase_integration">
+      <title>Problemas de Supabase</title>
+      <steps>
+        <step>Verificar configuração de conexão e chaves</step>
+        <step>Identificar problemas de autenticação/autorização</step>
+        <step>Corrigir queries e subscriptions</step>
+        <step>Otimizar uso de storage e funções edge</step>
+      </steps>
+    </workflow>
+
+    <workflow type="ui_responsiva">
+      <title>Problemas de UI</title>
+      <steps>
+        <step>Identificar problemas de layout e responsividade</step>
+        <step>Corrigir componentes quebrados ou inconsistentes</step>
+        <step>Implementar design system patterns</step>
+        <step>Otimizar performance de renderização</step>
+      </steps>
+    </workflow>
+
+    <workflow type="estado_global">
+      <title>Problemas de Estado Global</title>
+      <steps>
+        <step>Analisar arquitetura de estado atual</step>
+        <step>Identificar race conditions ou atualizações inconsistentes</step>
+        <step>Implementar solução de estado otimizada</step>
+        <step>Adicionar estratégias de cache se necessário</step>
+      </steps>
+    </workflow>
+  </problem_specific_workflows>
+
+  <completion_criteria>
+    <criterion>O problema principal foi resolvido</criterion>
+    <criterion>A solução é estável e não introduz novos problemas</criterion>
+    <criterion>O código segue as melhores práticas do projeto</criterion>
+    <criterion>A solução é performante e segura</criterion>
+    <criterion>As mudanças estão adequadamente documentadas</criterion>
+  </completion_criteria>
+
+  <emergency_protocol>
+    <title>Protocolo de Emergência</title>
+    <description>
+      Para problemas críticos que exigem solução imediata:
+    </description>
+    <steps>
+      <step>Implementar solução mínima viável primeiro</step>
+      <step>Adicionar rollback fácil se necessário</step>
+      <step>Documentar o problema e solução temporária</step>
+      <step>Planejar refatoração para solução permanente</step>
+    </steps>
+  </emergency_protocol>
+</workflow_instructions>

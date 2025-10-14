@@ -1,0 +1,346 @@
+<workflow>
+  <name>Full-Stack UI Designer Workflow</name>
+  <description>Processo de trabalho para desenvolvimento full-stack e design de UI com React/Remix</description>
+  
+  <phases>
+    <phase id="planning" name="Planejamento">
+      <description>Fase inicial de planejamento e definição de requisitos</description>
+      <steps>
+        <step id="requirements" name="Definir Requisitos">
+          <description>Coletar e documentar requisitos do projeto</description>
+          <tasks>
+            <task>Entender o escopo do projeto</task>
+            <task>Identificar funcionalidades principais</task>
+            <task>Definir requisitos técnicos</task>
+            <task>Documentar casos de uso</task>
+          </tasks>
+          <deliverables>
+            <deliverable>Documento de requisitos</deliverable>
+            <deliverable>Lista de funcionalidades</deliverable>
+            <deliverable>Diagrama de casos de uso</deliverable>
+          </deliverables>
+        </step>
+        
+        <step id="design" name="Design de UI/UX">
+          <description>Criar wireframes e protótipos da interface</description>
+          <tasks>
+            <task>Criar wireframes de baixa fidelidade</task>
+            <task>Definir paleta de cores e tipografia</task>
+            <task>Criar protótipos interativos</task>
+            <task>Validar design com stakeholders</task>
+          </tasks>
+          <deliverables>
+            <deliverable>Wireframes</deliverable>
+            <deliverable>Mockups de alta fidelidade</deliverable>
+            <deliverable>Protótipo interativo</deliverable>
+            <deliverable>Guia de estilo</deliverable>
+          </deliverables>
+        </step>
+        
+        <step id="architecture" name="Definir Arquitetura">
+          <description>Planejar a arquitetura da aplicação</description>
+          <tasks>
+            <task>Definir estrutura de diretórios</task>
+            <task>Planejar componentes e suas relações</task>
+            <task>Definir rotas e navegação</task>
+            <task>Planejar gerenciamento de estado</task>
+          </tasks>
+          <deliverables>
+            <deliverable>Diagrama de arquitetura</deliverable>
+            <deliverable>Estrutura de diretórios</deliverable>
+            <deliverable>Plano de componentes</deliverable>
+            <deliverable>Mapa de rotas</deliverable>
+          </deliverables>
+        </step>
+      </steps>
+    </phase>
+    
+    <phase id="development" name="Desenvolvimento">
+      <description>Fase de implementação do código</description>
+      <steps>
+        <step id="setup" name="Configurar Ambiente">
+          <description>Preparar o ambiente de desenvolvimento</description>
+          <tasks>
+            <task>Instalar dependências</task>
+            <task>Configurar estrutura de projeto</task>
+            <task>Configurar ferramentas de desenvolvimento</task>
+            <task>Configurar controle de versão</task>
+          </tasks>
+          <deliverables>
+            <deliverable>Projeto inicializado</deliverable>
+            <deliverable>Dependências instaladas</deliverable>
+            <deliverable>Configurações de desenvolvimento</deliverable>
+          </deliverables>
+        </step>
+        
+        <step id="components" name="Desenvolver Componentes">
+          <description>Criar componentes reutilizáveis</description>
+          <tasks>
+            <task>Desenvolver componentes básicos (Button, Input, etc.)</task>
+            <task>Desenvolver componentes de layout</task>
+            <task>Desenvolver componentes complexos</task>
+            <task>Documentar componentes</task>
+          </tasks>
+          <deliverables>
+            <deliverable>Biblioteca de componentes</deliverable>
+            <deliverable>Documentação de componentes</deliverable>
+            <deliverable>Testes de componentes</deliverable>
+          </deliverables>
+        </step>
+        
+        <step id="pages" name="Desenvolver Páginas">
+          <description>Implementar páginas e rotas</description>
+          <tasks>
+            <task>Implementar rotas do Remix</task>
+            <task>Desenvolver loaders e actions</task>
+            <task>Implementar páginas principais</task>
+            <task>Integrar componentes nas páginas</task>
+          </tasks>
+          <deliverables>
+            <deliverable>Páginas implementadas</deliverable>
+            <deliverable>Rotas configuradas</deliverable>
+            <deliverable>Loaders e actions</deliverable>
+          </deliverables>
+        </step>
+        
+        <step id="state" name="Implementar Gerenciamento de Estado">
+          <description>Implementar lógica de estado da aplicação</description>
+          <tasks>
+            <task>Implementar hooks personalizados</task>
+            <task>Configurar contextos</task>
+            <task>Implementar gerenciamento de estado global</task>
+            <task>Integrar com APIs</task>
+          </tasks>
+          <deliverables>
+            <deliverable>Hooks personalizados</deliverable>
+            <deliverable>Contextos configurados</deliverable>
+            <deliverable>Serviços de API</deliverable>
+          </deliverables>
+        </step>
+        
+        <step id="styling" name="Aplicar Estilos">
+          <description>Implementar estilos e design responsivo</description>
+          <tasks>
+            <task>Implementar sistema de design</task>
+            <task>Aplicar estilos aos componentes</task>
+            <task>Implementar design responsivo</task>
+            <task>Otimizar para diferentes dispositivos</task>
+          </tasks>
+          <deliverables>
+            <deliverable>Sistema de design implementado</deliverable>
+            <deliverable>Estilos aplicados</deliverable>
+            <deliverable>Design responsivo</deliverable>
+          </deliverables>
+        </step>
+      </steps>
+    </phase>
+    
+    <phase id="testing" name="Testes">
+      <description>Fase de testes e garantia de qualidade</description>
+      <steps>
+        <step id="unit-tests" name="Testes Unitários">
+          <description>Implementar testes unitários</description>
+          <tasks>
+            <task>Escrever testes para componentes</task>
+            <task>Escrever testes para hooks</task>
+            <task>Escrever testes para utilitários</task>
+            <task>Alcançar cobertura de testes adequada</task>
+          </tasks>
+          <deliverables>
+            <deliverable>Testes unitários implementados</deliverable>
+            <deliverable>Relatório de cobertura</deliverable>
+          </deliverables>
+        </step>
+        
+        <step id="integration-tests" name="Testes de Integração">
+          <description>Implementar testes de integração</description>
+          <tasks>
+            <task>Testar integração entre componentes</task>
+            <task>Testar integração com APIs</task>
+            <task>Testar fluxos de usuário</task>
+            <task>Testar navegação entre rotas</task>
+          </tasks>
+          <deliverables>
+            <deliverable>Testes de integração implementados</deliverable>
+            <deliverable>Relatórios de testes</deliverable>
+          </deliverables>
+        </step>
+        
+        <step id="e2e-tests" name="Testes End-to-End">
+          <description>Implementar testes end-to-end</description>
+          <tasks>
+            <task>Configurar ambiente de testes E2E</task>
+            <task>Escrever testes para fluxos críticos</task>
+            <task>Testar cenários de usuário</task>
+            <task>Executar testes em diferentes navegadores</task>
+          </tasks>
+          <deliverables>
+            <deliverable>Testes E2E implementados</deliverable>
+            <deliverable>Relatórios de testes</deliverable>
+          </deliverables>
+        </step>
+        
+        <step id="manual-testing" name="Testes Manuais">
+          <description>Realizar testes manuais</description>
+          <tasks>
+            <task>Testar interface em diferentes dispositivos</task>
+            <task>Testar acessibilidade</task>
+            <task>Testar usabilidade</task>
+            <task>Validar experiência do usuário</task>
+          </tasks>
+          <deliverables>
+            <deliverable>Relatório de testes manuais</deliverable>
+            <deliverable>Lista de problemas encontrados</deliverable>
+          </deliverables>
+        </step>
+      </steps>
+    </phase>
+    
+    <phase id="deployment" name="Implantação">
+      <description>Fase de preparação e implantação em produção</description>
+      <steps>
+        <step id="optimization" name="Otimização">
+          <description>Otimizar aplicação para produção</description>
+          <tasks>
+            <task>Otimizar build</task>
+            <task>Implementar lazy loading</task>
+            <task>Otimizar imagens e assets</task>
+            <task>Implementar estratégias de cache</task>
+          </tasks>
+          <deliverables>
+            <deliverable>Aplicação otimizada</deliverable>
+            <deliverable>Relatório de performance</deliverable>
+          </deliverables>
+        </step>
+        
+        <step id="ci-cd" name="Configurar CI/CD">
+          <description>Configurar pipeline de integração e entrega contínua</description>
+          <tasks>
+            <task>Configurar build automatizado</task>
+            <task>Configurar testes automatizados</task>
+            <task>Configurar deploy automatizado</task>
+            <task>Configurar monitoramento</task>
+          </tasks>
+          <deliverables>
+            <deliverable>Pipeline CI/CD configurado</deliverable>
+            <deliverable>Scripts de deploy</deliverable>
+          </deliverables>
+        </step>
+        
+        <step id="deployment" name="Implantar em Produção">
+          <description>Implantar aplicação em ambiente de produção</description>
+          <tasks>
+            <task>Preparar ambiente de produção</task>
+            <task>Implantar aplicação</task>
+            <task>Configurar domínio e SSL</task>
+            <task>Verificar implantação</task>
+          </tasks>
+          <deliverables>
+            <deliverable>Aplicação em produção</deliverable>
+            <deliverable>Relatório de implantação</deliverable>
+          </deliverables>
+        </step>
+      </steps>
+    </phase>
+    
+    <phase id="maintenance" name="Manutenção">
+      <description>Fase de manutenção e melhorias contínuas</description>
+      <steps>
+        <step id="monitoring" name="Monitoramento">
+          <description>Monitorar aplicação em produção</description>
+          <tasks>
+            <task>Configurar monitoramento de erros</task>
+            <task>Configurar monitoramento de performance</task>
+            <task>Configurar alertas</task>
+            <task>Analisar métricas</task>
+          </tasks>
+          <deliverables>
+            <deliverable>Sistema de monitoramento configurado</deliverable>
+            <deliverable>Painéis de métricas</deliverable>
+          </deliverables>
+        </step>
+        
+        <step id="updates" name="Atualizações">
+          <description>Manter aplicação atualizada</description>
+          <tasks>
+            <task>Atualizar dependências</task>
+            <task>Aplicar patches de segurança</task>
+            <task>Implementar melhorias</task>
+            <task>Corrigir bugs</task>
+          </tasks>
+          <deliverables>
+            <deliverable>Dependências atualizadas</deliverable>
+            <deliverable>Correções aplicadas</deliverable>
+          </deliverables>
+        </step>
+        
+        <step id="documentation" name="Documentação">
+          <description>Manter documentação atualizada</description>
+          <tasks>
+            <task>Atualizar documentação de código</task>
+            <task>Atualizar documentação de API</task>
+            <task>Atualizar guias de uso</task>
+            <task>Documentar decisões técnicas</task>
+          </tasks>
+          <deliverables>
+            <deliverable>Documentação atualizada</deliverable>
+            <deliverable>Guias de uso</deliverable>
+          </deliverables>
+        </step>
+      </steps>
+    </phase>
+  </phases>
+  
+  <best_practices>
+    <practice>Seguir o processo de forma iterativa, com ciclos curtos de feedback</practice>
+    <practice>Envolvimento contínuo de stakeholders para validação</practice>
+    <practice>Automatizar testes e implantação sempre que possível</practice>
+    <practice>Manter documentação atualizada durante todo o processo</practice>
+    <practice>Priorizar acessibilidade e experiência do usuário</practice>
+    <practice>Implementar revisões de código para garantir qualidade</practice>
+    <practice>Utilizar controle de versão para rastrear mudanças</practice>
+    <practice>Realizar testes em múltiplos ambientes antes da produção</practice>
+  </best_practices>
+  
+  <tools>
+    <tool id="planning-tools" name="Ferramentas de Planejamento">
+      <description>Ferramentas para planejamento e design</description>
+      <examples>
+        <example>Figma para design de UI</example>
+        <example>Miro para diagramas e colaboração</example>
+        <example>Jira para gerenciamento de projetos</example>
+        <example>Confluence para documentação</example>
+      </examples>
+    </tool>
+    
+    <tool id="development-tools" name="Ferramentas de Desenvolvimento">
+      <description>Ferramentas para desenvolvimento de código</description>
+      <examples>
+        <example>VS Code como editor de código</example>
+        <example>Git para controle de versão</example>
+        <example>GitHub para colaboração</example>
+        <example>NPM/Yarn para gerenciamento de dependências</example>
+      </examples>
+    </tool>
+    
+    <tool id="testing-tools" name="Ferramentas de Testes">
+      <description>Ferramentas para testes e qualidade</description>
+      <examples>
+        <example>Jest para testes unitários</example>
+        <example>React Testing Library para testes de componentes</example>
+        <example>Cypress para testes E2E</example>
+        <example>Lighthouse para análise de performance</example>
+      </examples>
+    </tool>
+    
+    <tool id="deployment-tools" name="Ferramentas de Implantação">
+      <description>Ferramentas para implantação e CI/CD</description>
+      <examples>
+        <example>Vercel para implantação de aplicações React</example>
+        <example>GitHub Actions para CI/CD</example>
+        <example>Docker para containerização</example>
+        <example>Sentry para monitoramento de erros</example>
+      </examples>
+    </tool>
+  </tools>
+</workflow>

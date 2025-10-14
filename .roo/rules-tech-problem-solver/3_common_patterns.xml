@@ -1,0 +1,1907 @@
+<common_patterns>
+  <overview>
+    Este documento contém padrões de código reutilizáveis e soluções comuns
+    para problemas técnicos frequentes em aplicações React com React Router v7,
+    Supabase e design de UI responsiva.
+  </overview>
+
+  <react_router_patterns>
+    <pattern name="roteamento_dinamico_com_parametros">
+      <title>Roteamento Dinâmico com Parâmetros</title>
+      <description>
+        Padrão para implementar rotas dinâmicas que recebem parâmetros,
+        com loaders para carregamento de dados e tratamento de erros.
+      </description>
+      <code language="typescript">
+        <![CDATA[
+// Definição da rota com parâmetros dinâmicos
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Layout />,
+    children: [
+      { index: true, element: <Home /> },
+      {
+        path: "projects/:projectId",
+        element: <ProjectDetail />,
+        loader: projectLoader,
+        errorElement: <ProjectError />
+      },
+      {
+        path: "projects/:projectId/tasks/:taskId",
+        element: <TaskDetail />,
+        loader: taskLoader,
+        action: taskAction
+      }
+    ]
+  }
+]);
+
+// Loader para carregar dados do projeto
+async function projectLoader({ params }) {
+  const { projectId } = params;
+  
+  try {
+    const response = await fetch(`/api/projects/${projectId}`);
+    if (!response.ok) {
+      throw new Response("Projeto não encontrado", { status: 404 });
+    }
+    const project = await response.json();
+    
+    // Carregar dados relacionados em paralelo
+    const [tasks, team] = await Promise.all([
+      fetch(`/api/projects/${projectId}/tasks`).then(res => res.json()),
+      fetch(`/api/projects/${projectId}/team`).then(res => res.json())
+    ]);
+    
+    return { project, tasks, team };
+  } catch (error) {
+    console.error("Erro ao carregar projeto:", error);
+    throw error;
+  }
+}
+
+// Componente que utiliza os dados carregados
+function ProjectDetail() {
+  const { project, tasks, team } = useLoaderData<typeof projectLoader>();
+  
+  return (
+    <div className="project-detail">
+      <h1>{project.name}</h1>
+      <p>{project.description}</p>
+      
+      <section className="tasks">
+        <h2>Tarefas</h2>
+        <TaskList tasks={tasks} />
+      </section>
+      
+      <section className="team">
+        <h2>Equipe</h2>
+        <TeamMembers members={team} />
+      </section>
+    </div>
+  );
+}
+        ]]>
+      </code>
+      <usage>
+        Use este padrão quando precisar criar rotas que exibem detalhes de recursos
+        específicos, como páginas de detalhes de produtos, projetos, usuários, etc.
+      </usage>
+    </pattern>
+
+    <pattern name="nested_routes_com_layouts_compartilhados">
+      <title>Nested Routes com Layouts Compartilhados</title>
+      <description>
+        Padrão para organizar rotas aninhadas com layouts compartilhados,
+        mantendo a estrutura da UI consistente.
+      </description>
+      <code language="typescript">
+        <![CDATA[
+// Estrutura de rotas aninhadas com layouts
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <RootLayout />,
+    children: [
+      { index: true, element: <Home /> },
+      {
+        path: "dashboard",
+        element: <DashboardLayout />,
+        children: [
+          { index: true, element: <DashboardOverview /> },
+          {
+            path: "projects",
+            element: <ProjectsLayout />,
+            children: [
+              { index: true, element: <ProjectsList /> },
+              { path: ":projectId", element: <ProjectDetail /> },
+              { path: "new", element: <NewProjectForm /> }
+            ]
+          },
+          {
+            path: "settings",
+            element: <SettingsLayout />,
+            children: [
+              { index: true, element: <GeneralSettings /> },
+              { path: "profile", element: <ProfileSettings /> },
+              { path: "notifications", element: <NotificationSettings /> }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]);
+
+// Layout raiz com navegação principal
+function RootLayout() {
+  return (
+    <div className="app">
+      <Header />
+      <main className="main-content">
+        <Outlet />
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
+// Layout do dashboard com sidebar
+function DashboardLayout() {
+  return (
+    <div className="dashboard">
+      <DashboardSidebar />
+      <div className="dashboard-content">
+        <Outlet />
+      </div>
+    </div>
+  );
+}
+
+// Layout específico para projetos
+function ProjectsLayout() {
+  const { projectId } = useParams();
+  
+  return (
+    <div className="projects-layout">
+      <ProjectsHeader />
+      <div className="projects-content">
+        <Outlet />
+      </div>
+      {projectId && <ProjectSidebar projectId={projectId} />}
+    </div>
+  );
+}
+        ]]>
+      </code>
+      <usage>
+        Use este padrão para criar seções da aplicação com layouts consistentes,
+        como dashboards, áreas administrativas, ou qualquer conjunto de páginas
+        que compartilhem elementos de UI comuns.
+      </usage>
+    </pattern>
+
+    <pattern name="protecao_de_rotas_com_autenticacao">
+      <title>Proteção de Rotas com Autenticação</title>
+      <description>
+        Padrão para implementar proteção de rotas que exigem autenticação,
+        com redirecionamento para login e preservação da rota original.
+      </description>
+      <code language="typescript">
+        <![CDATA[
+// Componente de proteção de rotas
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+  
+  if (loading) {
+    return <div>Carregando...</div>;
+  }
+  
+  if (!user) {
+    // Redireciona para login, mas salva a localização atual
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  
+  return <>{children}</>;
+}
+
+// Layout que exige autenticação
+function AuthenticatedLayout() {
+  return (
+    <ProtectedRoute>
+      <div className="authenticated-layout">
+        <Header />
+        <main>
+          <Outlet />
+        </main>
+      </div>
+    </ProtectedRoute>
+  );
+}
+
+// Hook personalizado para autenticação
+function useAuth() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    // Verificar sessão atual
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user || null);
+      setLoading(false);
+    };
+    
+    checkSession();
+    
+    // Listener para mudanças de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user || null);
+      }
+    );
+    
+    return () => subscription.unsubscribe();
+  }, []);
+  
+  return { user, loading };
+}
+
+// Página de login que redireciona após autenticação
+function LoginPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/";
+  
+  const handleLogin = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    
+    if (!error) {
+      navigate(from, { replace: true });
+    }
+  };
+  
+  return <LoginForm onLogin={handleLogin} />;
+}
+
+// Configuração do router com rotas protegidas
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <RootLayout />,
+    children: [
+      { index: true, element: <Home /> },
+      { path: "login", element: <LoginPage /> },
+      {
+        path: "dashboard",
+        element: <AuthenticatedLayout />,
+        children: [
+          { index: true, element: <Dashboard /> },
+          { path: "profile", element: <Profile /> }
+        ]
+      }
+    ]
+  }
+]);
+        ]]>
+      </code>
+      <usage>
+        Use este padrão para proteger rotas que exigem autenticação,
+        como dashboards, perfis de usuário, áreas administrativas, etc.
+      </usage>
+    </pattern>
+  </react_router_patterns>
+
+  <supabase_patterns>
+    <pattern name="autenticacao_com_supabase_e_context_provider">
+      <title>Autenticação com Supabase e Context Provider</title>
+      <description>
+        Padrão para implementar sistema de autenticação completo usando Supabase
+        com Context API para gerenciamento de estado global.
+      </description>
+      <code language="typescript">
+        <![CDATA[
+// Context de autenticação
+interface AuthContextType {
+  user: User | null;
+  session: Session | null;
+  loading: boolean;
+  signUp: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Provider de autenticação
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    // Verificar sessão atual
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    };
+    
+    getSession();
+    
+    // Listener para mudanças de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
+    );
+    
+    return () => subscription.unsubscribe();
+  }, []);
+  
+  const signUp = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password
+    });
+    
+    if (error) throw error;
+  };
+  
+  const signIn = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    
+    if (error) throw error;
+  };
+  
+  const signOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+  };
+  
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    if (error) throw error;
+  };
+  
+  const value = {
+    user,
+    session,
+    loading,
+    signUp,
+    signIn,
+    signOut,
+    resetPassword
+  };
+  
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+// Hook para usar o contexto de autenticação
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+}
+
+// Componente de registro
+export function SignUpForm() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const { signUp } = useAuth();
+  const navigate = useNavigate();
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    
+    try {
+      await signUp(email, password);
+      navigate("/verify-email");
+    } catch (err) {
+      setError(err.message || "Erro ao criar conta");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Email"
+        required
+      />
+      <input
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Senha"
+        required
+      />
+      <button type="submit" disabled={loading}>
+        {loading ? "Criando conta..." : "Criar conta"}
+      </button>
+      {error && <div className="error">{error}</div>}
+    </form>
+  );
+}
+        ]]>
+      </code>
+      <usage>
+        Use este padrão para implementar um sistema completo de autenticação
+        com Supabase, incluindo registro, login, logout e recuperação de senha.
+      </usage>
+    </pattern>
+
+    <pattern name="crud_com_supabase_e_hooks_personalizados">
+      <title>CRUD com Supabase e Hooks Personalizados</title>
+      <description>
+        Padrão para implementar operações CRUD usando Supabase com hooks
+        personalizados para melhor organização e reutilização de código.
+      </description>
+      <code language="typescript">
+        <![CDATA[
+// Tipos para os dados
+interface Project {
+  id: string;
+  name: string;
+  description: string;
+  status: 'planning' | 'active' | 'completed' | 'on-hold';
+  created_at: string;
+  updated_at: string;
+}
+
+// Hook para operações CRUD de projetos
+export function useProjects() {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Buscar todos os projetos
+  const fetchProjects = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setProjects(data || []);
+    } catch (err) {
+      setError(err.message || "Erro ao buscar projetos");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Criar novo projeto
+  const createProject = async (project: Omit<Project, 'id' | 'created_at' | 'updated_at'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .insert([project])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Atualizar estado local
+      setProjects(prev => [data, ...prev]);
+      return data;
+    } catch (err) {
+      setError(err.message || "Erro ao criar projeto");
+      throw err;
+    }
+  };
+  
+  // Atualizar projeto
+  const updateProject = async (id: string, updates: Partial<Project>) => {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Atualizar estado local
+      setProjects(prev => 
+        prev.map(project => project.id === id ? data : project)
+      );
+      return data;
+    } catch (err) {
+      setError(err.message || "Erro ao atualizar projeto");
+      throw err;
+    }
+  };
+  
+  // Excluir projeto
+  const deleteProject = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      // Atualizar estado local
+      setProjects(prev => prev.filter(project => project.id !== id));
+    } catch (err) {
+      setError(err.message || "Erro ao excluir projeto");
+      throw err;
+    }
+  };
+  
+  // Buscar projetos ao montar o componente
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+  
+  return {
+    projects,
+    loading,
+    error,
+    createProject,
+    updateProject,
+    deleteProject,
+    refetch: fetchProjects
+  };
+}
+
+// Hook para buscar um projeto específico
+export function useProject(id: string) {
+  const [project, setProject] = useState<Project | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const fetchProject = async () => {
+      if (!id) return;
+      
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const { data, error } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        if (error) throw error;
+        setProject(data);
+      } catch (err) {
+        setError(err.message || "Erro ao buscar projeto");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchProject();
+  }, [id]);
+  
+  return { project, loading, error };
+}
+
+// Componente que utiliza os hooks
+export function ProjectList() {
+  const { projects, loading, error, deleteProject } = useProjects();
+  
+  if (loading) return <div>Carregando projetos...</div>;
+  if (error) return <div className="error">{error}</div>;
+  
+  return (
+    <div className="project-list">
+      {projects.length === 0 ? (
+        <p>Nenhum projeto encontrado</p>
+      ) : (
+        <ul>
+          {projects.map(project => (
+            <li key={project.id} className="project-item">
+              <h3>{project.name}</h3>
+              <p>{project.description}</p>
+              <span className={`status status-${project.status}`}>
+                {project.status}
+              </span>
+              <button 
+                onClick={() => deleteProject(project.id)}
+                className="delete-button"
+              >
+                Excluir
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+        ]]>
+      </code>
+      <usage>
+        Use este padrão para implementar operações CRUD em qualquer entidade
+        do seu banco de dados Supabase, organizando o código em hooks reutilizáveis.
+      </usage>
+    </pattern>
+
+    <pattern name="real_time_updates_com_supabase">
+      <title>Real-time Updates com Supabase</title>
+      <description>
+        Padrão para implementar atualizações em tempo real usando subscriptions
+        do Supabase, com gerenciamento adequado de listeners.
+      </description>
+      <code language="typescript">
+        <![CDATA[
+// Hook para atualizações em tempo real de tarefas
+export function useRealtimeTasks(projectId: string) {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    if (!projectId) return;
+    
+    // Buscar tarefas iniciais
+    const fetchTasks = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const { data, error } = await supabase
+          .from('tasks')
+          .select('*')
+          .eq('project_id', projectId)
+          .order('created_at', { ascending: true });
+        
+        if (error) throw error;
+        setTasks(data || []);
+      } catch (err) {
+        setError(err.message || "Erro ao buscar tarefas");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchTasks();
+    
+    // Configurar subscription para atualizações em tempo real
+    const channel = supabase
+      .channel(`tasks-${projectId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Escutar todos os eventos (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'tasks',
+          filter: `project_id=eq.${projectId}`
+        },
+        (payload) => {
+          console.log('Realtime update:', payload);
+          
+          switch (payload.eventType) {
+            case 'INSERT':
+              setTasks(prev => [...prev, payload.new as Task]);
+              break;
+            case 'UPDATE':
+              setTasks(prev => 
+                prev.map(task => 
+                  task.id === payload.new.id ? payload.new as Task : task
+                )
+              );
+              break;
+            case 'DELETE':
+              setTasks(prev => 
+                prev.filter(task => task.id !== payload.old.id)
+              );
+              break;
+          }
+        }
+      )
+      .subscribe();
+    
+    // Limpar subscription ao desmontar componente
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [projectId]);
+  
+  return { tasks, loading, error };
+}
+
+// Componente que exibe tarefas com atualizações em tempo real
+export function TaskList({ projectId }: { projectId: string }) {
+  const { tasks, loading, error } = useRealtimeTasks(projectId);
+  
+  if (loading) return <div>Carregando tarefas...</div>;
+  if (error) return <div className="error">{error}</div>;
+  
+  return (
+    <div className="task-list">
+      <h2>Tarefas</h2>
+      {tasks.length === 0 ? (
+        <p>Nenhuma tarefa encontrada</p>
+      ) : (
+        <ul>
+          {tasks.map(task => (
+            <li key={task.id} className="task-item">
+              <div className="task-content">
+                <h3>{task.title}</h3>
+                <p>{task.description}</p>
+                <span className={`status status-${task.status}`}>
+                  {task.status}
+                </span>
+              </div>
+              <div className="task-meta">
+                <span className="assignee">
+                  {task.assignee_name || 'Não atribuído'}
+                </span>
+                <span className="updated-at">
+                  {new Date(task.updated_at).toLocaleString()}
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+// Hook para presença de usuários em tempo real
+export function useUserPresence(projectId: string, userId: string) {
+  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+  
+  useEffect(() => {
+    if (!projectId || !userId) return;
+    
+    // Configurar canal de presença
+    const channel = supabase.channel(`presence-${projectId}`);
+    
+    // Rastrear estado de presença
+    const presence = new Presence(channel);
+    
+    // Entrar no canal
+    presence.enter({
+      user_id: userId,
+      online_at: new Date().toISOString()
+    });
+    
+    // Listener para mudanças de presença
+    presence.onSync(() => {
+      const newState = presence.presenceState();
+      const users = Object.keys(newState).map(key => newState[key][0].user_id);
+      setOnlineUsers(users);
+    });
+    
+    // Configurar heartbeat para manter presença
+    const interval = setInterval(() => {
+      presence.ping();
+    }, 30000); // Ping a cada 30 segundos
+    
+    return () => {
+      clearInterval(interval);
+      presence.leave();
+      supabase.removeChannel(channel);
+    };
+  }, [projectId, userId]);
+  
+  return { onlineUsers };
+}
+        ]]>
+      </code>
+      <usage>
+        Use este padrão para implementar funcionalidades que exigem atualizações
+        em tempo real, como chat, colaboração simultânea, notificações, etc.
+      </usage>
+    </pattern>
+  </supabase_patterns>
+
+  <ui_responsive_patterns>
+    <pattern name="componentes_responsivos_com_tailwind">
+      <title>Componentes Responsivos com Tailwind</title>
+      <description>
+        Padrão para criar componentes UI responsivos usando Tailwind CSS
+        com abordagem mobile-first e breakpoints bem definidos.
+      </description>
+      <code language="tsx">
+        <![CDATA[
+// Card responsivo que se adapta a diferentes tamanhos de tela
+export function ResponsiveCard({ 
+  title, 
+  children, 
+  actions,
+  imageUrl 
+}: {
+  title: string;
+  children: React.ReactNode;
+  actions?: React.ReactNode;
+  imageUrl?: string;
+}) {
+  return (
+    <div className="bg-white rounded-lg shadow-md overflow-hidden transition-all duration-200 hover:shadow-lg">
+      {imageUrl && (
+        <div className="aspect-video w-full overflow-hidden">
+          <img 
+            src={imageUrl} 
+            alt={title}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
+      
+      <div className="p-4 sm:p-6">
+        <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-2">
+          {title}
+        </h3>
+        
+        <div className="text-gray-600 text-sm sm:text-base mb-4">
+          {children}
+        </div>
+        
+        {actions && (
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            {actions}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Grid responsivo que se adapta ao número de itens
+export function ResponsiveGrid({ 
+  children, 
+  minItemWidth = 280 
+}: {
+  children: React.ReactNode;
+  minItemWidth?: number;
+}) {
+  return (
+    <div 
+      className="grid gap-4 sm:gap-6"
+      style={{
+        gridTemplateColumns: `repeat(auto-fill, minmax(${minItemWidth}px, 1fr))`
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+// Navegação responsiva com menu mobile
+export function ResponsiveNavigation({ items }: { items: NavItem[] }) {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  return (
+    <nav className="bg-gray-800 text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <div className="flex-shrink-0">
+            <span className="font-bold text-xl">Logo</span>
+          </div>
+          
+          {/* Menu desktop */}
+          <div className="hidden md:block">
+            <div className="ml-10 flex items-baseline space-x-4">
+              {items.map((item) => (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  className="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700 transition-colors"
+                >
+                  {item.name}
+                </a>
+              ))}
+            </div>
+          </div>
+          
+          {/* Botão menu mobile */}
+          <div className="md:hidden">
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none"
+            >
+              <span className="sr-only">Abrir menu</span>
+              {!isOpen ? (
+                <svg className="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              ) : (
+                <svg className="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      {/* Menu mobile */}
+      {isOpen && (
+        <div className="md:hidden">
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+            {items.map((item) => (
+              <a
+                key={item.name}
+                href={item.href}
+                className="block px-3 py-2 rounded-md text-base font-medium hover:bg-gray-700 transition-colors"
+                onClick={() => setIsOpen(false)}
+              >
+                {item.name}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+    </nav>
+  );
+}
+
+// Formulário responsivo com layout adaptativo
+export function ResponsiveForm({ 
+  onSubmit, 
+  children, 
+  isLoading = false 
+}: {
+  onSubmit: (e: React.FormEvent) => void;
+  children: React.ReactNode;
+  isLoading?: boolean;
+}) {
+  return (
+    <form 
+      onSubmit={onSubmit}
+      className="space-y-4 sm:space-y-6"
+    >
+      <div className="grid grid-cols-1 gap-4 sm:gap-6">
+        {children}
+      </div>
+      
+      <div className="flex flex-col sm:flex-row sm:justify-end gap-3 sm:gap-4 pt-4">
+        <button
+          type="button"
+          className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full sm:w-auto"
+        >
+          Cancelar
+        </button>
+        
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoading ? 'Salvando...' : 'Salvar'}
+        </button>
+      </div>
+    </form>
+  );
+}
+        ]]>
+      </code>
+      <usage>
+        Use estes padrões para criar componentes UI responsivos que funcionem
+        bem em todos os tamanhos de tela, desde mobile até desktop.
+      </usage>
+    </pattern>
+
+    <pattern name="design_system_com_tokens_e_componentes_compostos">
+      <title>Design System com Tokens e Componentes Compostos</title>
+      <description>
+        Padrão para criar um design system consistente usando tokens de design
+        e componentes compostos que podem ser combinados de diferentes formas.
+      </description>
+      <code language="tsx">
+        <![CDATA[
+// tokens.ts - Tokens de design centralizados
+export const tokens = {
+  colors: {
+    primary: {
+      50: '#eff6ff',
+      100: '#dbeafe',
+      500: '#3b82f6',
+      600: '#2563eb',
+      700: '#1d4ed8',
+      900: '#1e3a8a'
+    },
+    gray: {
+      50: '#f9fafb',
+      100: '#f3f4f6',
+      500: '#6b7280',
+      700: '#374151',
+      900: '#111827'
+    },
+    success: '#10b981',
+    warning: '#f59e0b',
+    error: '#ef4444'
+  },
+  spacing: {
+    xs: '0.5rem',   // 8px
+    sm: '1rem',     // 16px
+    md: '1.5rem',   // 24px
+    lg: '2rem',     // 32px
+    xl: '3rem',     // 48px
+    '2xl': '4rem'   // 64px
+  },
+  borderRadius: {
+    sm: '0.25rem',  // 4px
+    md: '0.375rem', // 6px
+    lg: '0.5rem',   // 8px
+    xl: '0.75rem',  // 12px
+    full: '9999px'
+  },
+  typography: {
+    fontFamily: {
+      sans: ['Inter', 'system-ui', 'sans-serif'],
+      mono: ['JetBrains Mono', 'monospace']
+    },
+    fontSize: {
+      xs: '0.75rem',   // 12px
+      sm: '0.875rem',  // 14px
+      base: '1rem',    // 16px
+      lg: '1.125rem',  // 18px
+      xl: '1.25rem',   // 20px
+      '2xl': '1.5rem', // 24px
+      '3xl': '1.875rem', // 30px
+      '4xl': '2.25rem'   // 36px
+    },
+    fontWeight: {
+      normal: '400',
+      medium: '500',
+      semibold: '600',
+      bold: '700'
+    }
+  },
+  shadows: {
+    sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+    md: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+    lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+    xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
+  }
+};
+
+// Button component com variantes e tamanhos
+export interface ButtonProps {
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
+  isLoading?: boolean;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
+  children: React.ReactNode;
+  onClick?: () => void;
+  type?: 'button' | 'submit' | 'reset';
+  disabled?: boolean;
+  className?: string;
+}
+
+export function Button({
+  variant = 'primary',
+  size = 'md',
+  isLoading = false,
+  leftIcon,
+  rightIcon,
+  children,
+  onClick,
+  type = 'button',
+  disabled = false,
+  className = ''
+}: ButtonProps) {
+  // Classes base para todos os botões
+  const baseClasses = `
+    inline-flex items-center justify-center
+    font-medium rounded-md transition-colors
+    focus:outline-none focus:ring-2 focus:ring-offset-2
+    disabled:opacity-50 disabled:cursor-not-allowed
+  `;
+  
+  // Classes específicas por variante
+  const variantClasses = {
+    primary: `
+      bg-blue-600 text-white hover:bg-blue-700
+      focus:ring-blue-500
+    `,
+    secondary: `
+      bg-gray-200 text-gray-900 hover:bg-gray-300
+      focus:ring-gray-500
+    `,
+    outline: `
+      border border-gray-300 bg-transparent text-gray-700
+      hover:bg-gray-50 focus:ring-blue-500
+    `,
+    ghost: `
+      bg-transparent text-gray-700 hover:bg-gray-100
+      focus:ring-gray-500
+    `,
+    danger: `
+      bg-red-600 text-white hover:bg-red-700
+      focus:ring-red-500
+    `
+  };
+  
+  // Classes específicas por tamanho
+  const sizeClasses = {
+    xs: 'text-xs px-2 py-1',
+    sm: 'text-sm px-3 py-1.5',
+    md: 'text-sm px-4 py-2',
+    lg: 'text-base px-6 py-3'
+  };
+  
+  const classes = `
+    ${baseClasses}
+    ${variantClasses[variant]}
+    ${sizeClasses[size]}
+    ${className}
+  `;
+  
+  return (
+    <button
+      type={type}
+      className={classes.trim()}
+      onClick={onClick}
+      disabled={disabled || isLoading}
+    >
+      {isLoading && (
+        <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      )}
+      
+      {!isLoading && leftIcon && (
+        <span className="mr-2">{leftIcon}</span>
+      )}
+      
+      {children}
+      
+      {!isLoading && rightIcon && (
+        <span className="ml-2">{rightIcon}</span>
+      )}
+    </button>
+  );
+}
+
+// Input component com estados e validação
+export interface InputProps {
+  label?: string;
+  placeholder?: string;
+  value?: string;
+  onChange?: (value: string) => void;
+  error?: string;
+  helperText?: string;
+  disabled?: boolean;
+  required?: boolean;
+  type?: 'text' | 'email' | 'password' | 'number';
+  className?: string;
+}
+
+export function Input({
+  label,
+  placeholder,
+  value,
+  onChange,
+  error,
+  helperText,
+  disabled = false,
+  required = false,
+  type = 'text',
+  className = ''
+}: InputProps) {
+  const inputId = `input-${Math.random().toString(36).substr(2, 9)}`;
+  
+  const inputClasses = `
+    w-full px-3 py-2 border rounded-md shadow-sm
+    placeholder-gray-400 focus:outline-none focus:ring-2
+    focus:ring-blue-500 focus:border-blue-500
+    ${error ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'}
+    ${disabled ? 'bg-gray-50 cursor-not-allowed' : ''}
+    ${className}
+  `;
+  
+  return (
+    <div className="w-full">
+      {label && (
+        <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 mb-1">
+          {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+      )}
+      
+      <input
+        id={inputId}
+        type={type}
+        value={value}
+        onChange={(e) => onChange?.(e.target.value)}
+        placeholder={placeholder}
+        disabled={disabled}
+        className={inputClasses.trim()}
+      />
+      
+      {(error || helperText) && (
+        <p className={`mt-1 text-sm ${error ? 'text-red-600' : 'text-gray-500'}`}>
+          {error || helperText}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// Card component com slots para conteúdo flexível
+export interface CardProps {
+  header?: React.ReactNode;
+  footer?: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
+  padding?: 'none' | 'sm' | 'md' | 'lg';
+}
+
+export function Card({
+  header,
+  footer,
+  children,
+  className = '',
+  padding = 'md'
+}: CardProps) {
+  const paddingClasses = {
+    none: '',
+    sm: 'p-3',
+    md: 'p-4',
+    lg: 'p-6'
+  };
+  
+  return (
+    <div className={`bg-white rounded-lg shadow ${className}`}>
+      {header && (
+        <div className={`border-b border-gray-200 ${padding !== 'none' ? paddingClasses[padding] : 'px-4 py-3'}`}>
+          {header}
+        </div>
+      )}
+      
+      <div className={padding !== 'none' ? paddingClasses[padding] : ''}>
+        {children}
+      </div>
+      
+      {footer && (
+        <div className={`border-t border-gray-200 ${padding !== 'none' ? paddingClasses[padding] : 'px-4 py-3'}`}>
+          {footer}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Exemplo de uso dos componentes em um formulário
+export function ProjectForm() {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [errors, setErrors] = useState({ name: '', description: '' });
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validação simples
+    const newErrors = {
+      name: name.trim() ? '' : 'Nome é obrigatório',
+      description: description.trim() ? '' : 'Descrição é obrigatória'
+    };
+    
+    setErrors(newErrors);
+    
+    if (!newErrors.name && !newErrors.description) {
+      // Enviar formulário
+      console.log({ name, description });
+    }
+  };
+  
+  return (
+    <Card header={<h2 className="text-lg font-semibold">Novo Projeto</h2>}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Input
+          label="Nome do Projeto"
+          placeholder="Digite o nome do projeto"
+          value={name}
+          onChange={setName}
+          error={errors.name}
+          required
+        />
+        
+        <Input
+          label="Descrição"
+          placeholder="Digite a descrição do projeto"
+          value={description}
+          onChange={setDescription}
+          error={errors.description}
+          required
+        />
+        
+        <div className="flex justify-end space-x-3 pt-2">
+          <Button variant="outline" type="button">
+            Cancelar
+          </Button>
+          <Button type="submit">
+            Criar Projeto
+          </Button>
+        </div>
+      </form>
+    </Card>
+  );
+}
+        ]]>
+      </code>
+      <usage>
+        Use este padrão para criar um design system consistente com tokens
+        e componentes reutilizáveis que podem ser combinados de diferentes formas.
+      </usage>
+    </pattern>
+  </ui_responsive_patterns>
+
+  <performance_patterns>
+    <pattern name="otimizacao_de_renderizacao_com_react">
+      <title>Otimização de Renderização com React</title>
+      <description>
+        Padrão para otimizar a performance de componentes React usando
+        memoização, lazy loading e outras técnicas de performance.
+      </description>
+      <code language="tsx">
+        <![CDATA[
+// Componente pesado otimizado com memoização
+interface ExpensiveListProps {
+  items: Item[];
+  onItemClick: (id: string) => void;
+  filterText: string;
+}
+
+export const ExpensiveList = memo(function ExpensiveList({
+  items,
+  onItemClick,
+  filterText
+}: ExpensiveListProps) {
+  // Memoizar o processamento dos itens filtrados
+  const filteredItems = useMemo(() => {
+    console.log('Filtrando itens...');
+    return items.filter(item => 
+      item.name.toLowerCase().includes(filterText.toLowerCase())
+    );
+  }, [items, filterText]);
+  
+  // Memoizar o callback de clique para evitar recriação
+  const handleItemClick = useCallback((id: string) => {
+    onItemClick(id);
+  }, [onItemClick]);
+  
+  return (
+    <div className="expensive-list">
+      {filteredItems.map(item => (
+        <ListItem 
+          key={item.id} 
+          item={item} 
+          onClick={handleItemClick}
+        />
+      ))}
+    </div>
+  );
+});
+
+// Componente de item da lista também memoizado
+interface ListItemProps {
+  item: Item;
+  onClick: (id: string) => void;
+}
+
+const ListItem = memo(function ListItem({ item, onClick }: ListItemProps) {
+  console.log(`Renderizando item ${item.id}`);
+  
+  return (
+    <div 
+      className="list-item"
+      onClick={() => onClick(item.id)}
+    >
+      <h3>{item.name}</h3>
+      <p>{item.description}</p>
+    </div>
+  );
+});
+
+// Hook personalizado para dados com cache e deduping
+interface UseDataOptions<T> {
+  fetchData: () => Promise<T>;
+  deps?: any[];
+  cacheKey?: string;
+  staleTime?: number;
+}
+
+export function useData<T>({
+  fetchData,
+  deps = [],
+  cacheKey,
+  staleTime = 5 * 60 * 1000 // 5 minutos
+}: UseDataOptions<T>) {
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [lastFetch, setLastFetch] = useState(0);
+  
+  useEffect(() => {
+    const now = Date.now();
+    
+    // Verificar se temos dados em cache e se eles ainda são válidos
+    if (cacheKey) {
+      const cached = localStorage.getItem(`cache-${cacheKey}`);
+      if (cached) {
+        try {
+          const { data: cachedData, timestamp } = JSON.parse(cached);
+          if (now - timestamp < staleTime) {
+            setData(cachedData);
+            setLoading(false);
+            return;
+          }
+        } catch (e) {
+          // Cache inválido, continuar com busca normal
+        }
+      }
+    }
+    
+    // Verificar se a busca anterior foi recente o suficiente
+    if (lastFetch && now - lastFetch < 1000) { // 1 segundo
+      return;
+    }
+    
+    const fetchDataAsync = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const result = await fetchData();
+        setData(result);
+        setLastFetch(now);
+        
+        // Salvar no cache se cacheKey foi fornecido
+        if (cacheKey) {
+          localStorage.setItem(
+            `cache-${cacheKey}`,
+            JSON.stringify({ data: result, timestamp: now })
+          );
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error(String(err)));
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchDataAsync();
+  }, [...deps, staleTime, cacheKey]);
+  
+  return { data, loading, error, refetch: () => setLastFetch(0) };
+}
+
+// Componente com lazy loading e code splitting
+const HeavyChart = lazy(() => import('./HeavyChart'));
+const AdminPanel = lazy(() => import('./AdminPanel'));
+
+interface DashboardProps {
+  user: User;
+}
+
+export function Dashboard({ user }: DashboardProps) {
+  const [showChart, setShowChart] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
+  
+  return (
+    <div className="dashboard">
+      <h1>Dashboard de {user.name}</h1>
+      
+      <div className="dashboard-controls">
+        <button onClick={() => setShowChart(!showChart)}>
+          {showChart ? 'Ocultar Gráfico' : 'Mostrar Gráfico'}
+        </button>
+        
+        {user.isAdmin && (
+          <button onClick={() => setShowAdmin(!showAdmin)}>
+            {showAdmin ? 'Ocultar Painel Admin' : 'Mostrar Painel Admin'}
+          </button>
+        )}
+      </div>
+      
+      <div className="dashboard-content">
+        {/* Lazy loading do gráfico apenas quando necessário */}
+        {showChart && (
+          <Suspense fallback={<div>Carregando gráfico...</div>}>
+            <HeavyChart />
+          </Suspense>
+        )}
+        
+        {/* Lazy loading do painel admin apenas quando necessário */}
+        {showAdmin && (
+          <Suspense fallback={<div>Carregando painel administrativo...</div>}>
+            <AdminPanel />
+          </Suspense>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Virtualização de listas longas
+import { FixedSizeList as List } from 'react-window';
+
+interface VirtualizedListProps {
+  items: Item[];
+  onItemClick: (id: string) => void;
+}
+
+export function VirtualizedList({ items, onItemClick }: VirtualizedListProps) {
+  // Componente de item para a lista virtualizada
+  const Row = ({ index, style }: { index: number; style: React.CSSProperties }) => (
+    <div style={style} onClick={() => onItemClick(items[index].id)}>
+      <h3>{items[index].name}</h3>
+      <p>{items[index].description}</p>
+    </div>
+  );
+  
+  return (
+    <List
+      height={500}
+      itemCount={items.length}
+      itemSize={100}
+      width="100%"
+    >
+      {Row}
+    </List>
+  );
+}
+        ]]>
+      </code>
+      <usage>
+        Use estes padrões para otimizar a performance de componentes React,
+        especialmente em aplicações com listas longas, dados complexos ou
+        componentes pesados.
+      </usage>
+    </pattern>
+  </performance_patterns>
+
+  <error_handling_patterns>
+    <pattern name="tratamento_centralizado_de_erros">
+      <title>Tratamento Centralizado de Erros</title>
+      <description>
+        Padrão para implementar tratamento de erros centralizado com
+        Error Boundaries, interceptors de API e notificações de erro.
+      </description>
+      <code language="tsx">
+        <![CDATA[
+// Error Boundary personalizado
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+  errorInfo: React.ErrorInfo | null;
+}
+
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+  fallback?: React.ComponentType<{ error: Error; errorInfo: React.ErrorInfo }>;
+  onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
+}
+
+export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null, errorInfo: null };
+  }
+  
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
+    return { hasError: true, error };
+  }
+  
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    this.setState({ error, errorInfo });
+    
+    // Registrar erro em serviço de monitoramento
+    console.error('ErrorBoundary capturou um erro:', error, errorInfo);
+    
+    // Chamar callback de erro se fornecido
+    this.props.onError?.(error, errorInfo);
+  }
+  
+  render() {
+    if (this.state.hasError && this.state.error) {
+      const FallbackComponent = this.props.fallback || DefaultErrorFallback;
+      return (
+        <FallbackComponent 
+          error={this.state.error} 
+          errorInfo={this.state.errorInfo!} 
+        />
+      );
+    }
+    
+    return this.props.children;
+  }
+}
+
+// Componente fallback padrão
+function DefaultErrorFallback({ error, errorInfo }: { 
+  error: Error; 
+  errorInfo: React.ErrorInfo 
+}) {
+  return (
+    <div className="error-boundary-fallback">
+      <h2>Algo deu errado</h2>
+      <p>Ocorreu um erro inesperado na aplicação.</p>
+      <details className="error-details">
+        <summary>Detalhes do erro</summary>
+        <p>{error.message}</p>
+        <pre>{errorInfo.componentStack}</pre>
+      </details>
+      <button onClick={() => window.location.reload()}>
+        Recarregar página
+      </button>
+    </div>
+  );
+}
+
+// Interceptor de API com tratamento de erros
+import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL,
+  timeout: 10000,
+});
+
+// Interceptor de requisição
+api.interceptors.request.use(
+  (config: AxiosRequestConfig) => {
+    // Adicionar token de autenticação
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    
+    return config;
+  },
+  (error: AxiosError) => {
+    return Promise.reject(error);
+  }
+);
+
+// Interceptor de resposta
+api.interceptors.response.use(
+  (response: AxiosResponse) => {
+    return response;
+  },
+  (error: AxiosError) => {
+    // Tratar diferentes tipos de erro
+    if (error.response) {
+      // Erro de resposta do servidor (4xx, 5xx)
+      switch (error.response.status) {
+        case 401:
+          // Não autorizado - redirecionar para login
+          window.location.href = '/login';
+          break;
+        case 403:
+          // Proibido - mostrar mensagem de permissão negada
+          showToast('Você não tem permissão para realizar esta ação', 'error');
+          break;
+        case 404:
+          // Não encontrado - mostrar mensagem de recurso não encontrado
+          showToast('Recurso não encontrado', 'error');
+          break;
+        case 500:
+          // Erro interno do servidor - mostrar mensagem genérica
+          showToast('Erro interno do servidor', 'error');
+          break;
+        default:
+          // Outros erros
+          showToast(error.response.data?.message || 'Ocorreu um erro', 'error');
+      }
+    } else if (error.request) {
+      // Erro de requisição (sem resposta)
+      showToast('Erro de conexão com o servidor', 'error');
+    } else {
+      // Erro de configuração
+      showToast('Erro ao configurar requisição', 'error');
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
+// Hook para notificações de toast
+interface Toast {
+  id: string;
+  message: string;
+  type: 'success' | 'error' | 'warning' | 'info';
+  duration?: number;
+}
+
+interface UseToastReturn {
+  toasts: Toast[];
+  showToast: (message: string, type: Toast['type'], duration?: number) => void;
+  removeToast: (id: string) => void;
+}
+
+export function useToast(): UseToastReturn {
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  
+  const showToast = useCallback((
+    message: string, 
+    type: Toast['type'] = 'info', 
+    duration = 5000
+  ) => {
+    const id = Math.random().toString(36).substr(2, 9);
+    const newToast: Toast = { id, message, type, duration };
+    
+    setToasts(prev => [...prev, newToast]);
+    
+    // Remover toast automaticamente após a duração
+    setTimeout(() => {
+      removeToast(id);
+    }, duration);
+  }, []);
+  
+  const removeToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  }, []);
+  
+  return { toasts, showToast, removeToast };
+}
+
+// Componente de container de toasts
+export function ToastContainer() {
+  const { toasts, removeToast } = useToast();
+  
+  return (
+    <div className="toast-container">
+      {toasts.map(toast => (
+        <div 
+          key={toast.id}
+          className={`toast toast-${toast.type}`}
+          onClick={() => removeToast(toast.id)}
+        >
+          {toast.message}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Hook para tratamento de erros em operações assíncronas
+interface UseAsyncOptions<T> {
+  onSuccess?: (data: T) => void;
+  onError?: (error: Error) => void;
+  showSuccessToast?: boolean;
+  showErrorToast?: boolean;
+  successMessage?: string;
+}
+
+export function useAsync<T>(
+  asyncFunction: () => Promise<T>,
+  options: UseAsyncOptions<T> = {}
+) {
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const { showToast } = useToast();
+  
+  const execute = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const result = await asyncFunction();
+      setData(result);
+      
+      if (options.onSuccess) {
+        options.onSuccess(result);
+      }
+      
+      if (options.showSuccessToast) {
+        showToast(
+          options.successMessage || 'Operação realizada com sucesso',
+          'success'
+        );
+      }
+      
+      return result;
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      setError(error);
+      
+      if (options.onError) {
+        options.onError(error);
+      }
+      
+      if (options.showErrorToast !== false) {
+        showToast(error.message || 'Ocorreu um erro', 'error');
+      }
+      
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [asyncFunction, options, showToast]);
+  
+  return { data, loading, error, execute };
+}
+
+// Exemplo de uso dos componentes e hooks
+function App() {
+  return (
+    <ErrorBoundary>
+      <div className="app">
+        <ToastContainer />
+        <Router />
+      </div>
+    </ErrorBoundary>
+  );
+}
+
+function UserProfile() {
+  const { user, loading, error, refetch } = useData(
+    () => api.get('/user/profile').then(res => res.data),
+    [],
+    'user-profile'
+  );
+  
+  const { execute: updateProfile, loading: updating } = useAsync(
+    (profileData) => api.put('/user/profile', profileData),
+    {
+      onSuccess: () => {
+        refetch(); // Atualizar dados do usuário após atualização
+      },
+      showSuccessToast: true,
+      successMessage: 'Perfil atualizado com sucesso'
+    }
+  );
+  
+  if (loading) return <div>Carregando perfil...</div>;
+  if (error) return <div>Erro ao carregar perfil</div>;
+  
+  return (
+    <div className="user-profile">
+      <h1>Perfil de {user.name}</h1>
+      <button 
+        onClick={() => updateProfile({ name: 'Novo Nome' })}
+        disabled={updating}
+      >
+        {updating ? 'Atualizando...' : 'Atualizar Perfil'}
+      </button>
+    </div>
+  );
+}
+        ]]>
+      </code>
+      <usage>
+        Use este padrão para implementar tratamento de erros robusto e centralizado
+        em sua aplicação, com Error Boundaries, interceptors de API e notificações.
+      </usage>
+    </pattern>
+  </error_handling_patterns>
+</common_patterns>

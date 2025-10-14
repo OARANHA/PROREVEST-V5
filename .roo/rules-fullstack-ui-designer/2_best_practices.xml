@@ -1,0 +1,2013 @@
+<best_practices>
+  <name>Full-Stack UI Designer Best Practices</name>
+  <description>Melhores práticas para desenvolvimento full-stack e design de UI com React/Remix</description>
+  
+  <categories>
+    <category id="react-practices" name="React Best Practices">
+      <practices>
+        <practice id="component-structure" name="Estrutura de Componentes">
+          <description>Organizar componentes de forma lógica e coesa</description>
+          <guidelines>
+            <guideline>Manter componentes pequenos e focados em uma única responsabilidade</guideline>
+            <guideline>Separar componentes de apresentação de componentes de lógica</guideline>
+            <guideline>Usar composição em vez de herança sempre que possível</guideline>
+            <guideline>Nomear componentes de forma descritiva e consistente</guideline>
+          </guidelines>
+          <example>
+            <code>
+              // Bom: Componente focado em uma única responsabilidade
+              function UserProfile({ user, onEdit }) {
+                return (
+                  <div className="user-profile">
+                    <Avatar src={user.avatar} alt={user.name} />
+                    <div className="user-info">
+                      <h2>{user.name}</h2>
+                      <p>{user.email}</p>
+                    </div>
+                    <Button onClick={onEdit}>Editar</Button>
+                  </div>
+                );
+              }
+            </code>
+          </example>
+        </practice>
+        
+        <practice id="state-management" name="Gerenciamento de Estado">
+          <description>Gerenciar estado de forma eficiente e previsível</description>
+          <guidelines>
+            <guideline>Elevar o estado apenas quando necessário</guideline>
+            <guideline>Usar o hook mais apropriado para cada tipo de estado (useState, useReducer, useContext)</guideline>
+            <guideline>Evitar estados desnecessários e derivar estado quando possível</guideline>
+            <guideline>Para estado global complexo, considerar bibliotecas como Redux ou Zustand</guideline>
+          </guidelines>
+          <example>
+            <code>
+              // Bom: Derivando estado em vez de criar estado redundante
+              function TodoList({ todos }) {
+                const [filter, setFilter] = useState('all');
+                
+                // Estado derivado, não precisa de outro useState
+                const filteredTodos = useMemo(() => {
+                  switch (filter) {
+                    case 'active':
+                      return todos.filter(todo => !todo.completed);
+                    case 'completed':
+                      return todos.filter(todo => todo.completed);
+                    default:
+                      return todos;
+                  }
+                }, [todos, filter]);
+                
+                return (
+                  <div>
+                    <div className="filters">
+                      <button onClick={() => setFilter('all')}>Todos</button>
+                      <button onClick={() => setFilter('active')}>Ativos</button>
+                      <button onClick={() => setFilter('completed')}>Concluídos</button>
+                    </div>
+                    <ul>
+                      {filteredTodos.map(todo => (
+                        <TodoItem key={todo.id} todo={todo} />
+                      ))}
+                    </ul>
+                  </div>
+                );
+              }
+            </code>
+          </example>
+        </practice>
+        
+        <practice id="hooks" name="Uso de Hooks">
+          <description>Utilizar hooks de forma correta e eficiente</description>
+          <guidelines>
+            <guideline>Seguir as regras dos hooks: chamá-los apenas no nível superior e apenas em funções React</guideline>
+            <guideline>Usar useCallback e useMemo para otimizar performance quando necessário</guideline>
+            <guideline>Criar hooks personalizados para extrair lógica reutilizável</guideline>
+            <guideline>Limpar efeitos colaterais em useEffect para evitar memory leaks</guideline>
+          </guidelines>
+          <example>
+            <code>
+              // Bom: Hook personalizado para extrair lógica reutilizável
+              function useLocalStorage(key, initialValue) {
+                const [storedValue, setStoredValue] = useState(() => {
+                  try {
+                    const item = window.localStorage.getItem(key);
+                    return item ? JSON.parse(item) : initialValue;
+                  } catch (error) {
+                    console.error(error);
+                    return initialValue;
+                  }
+                });
+                
+                const setValue = (value) => {
+                  try {
+                    const valueToStore = value instanceof Function ? value(storedValue) : value;
+                    setStoredValue(valueToStore);
+                    window.localStorage.setItem(key, JSON.stringify(valueToStore));
+                  } catch (error) {
+                    console.error(error);
+                  }
+                };
+                
+                return [storedValue, setValue];
+              }
+              
+              // Usando o hook personalizado
+              function App() {
+                const [name, setName] = useLocalStorage('name', 'John');
+                
+                return (
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                );
+              }
+            </code>
+          </example>
+        </practice>
+        
+        <practice id="performance" name="Otimização de Performance">
+          <description>Otimizar componentes para melhor performance</description>
+          <guidelines>
+            <guideline>Usar React.memo para componentes que renderizam o mesmo resultado com as mesmas props</guideline>
+            <guideline>Usar useCallback e useMemo para evitar recriação de funções e valores</guideline>
+            <guideline>Implementar code splitting com React.lazy e Suspense</guideline>
+            <guideline>Virtualizar listas longas com bibliotecas como react-window</guideline>
+          </guidelines>
+          <example>
+            <code>
+              // Bom: Otimizando componente com React.memo e useMemo
+              const ExpensiveComponent = React.memo(function ExpensiveComponent({ data, onItemClick }) {
+                const processedData = useMemo(() => {
+                  // Processamento custoso
+                  return data.map(item => ({
+                    ...item,
+                    formattedValue: formatValue(item.value)
+                  }));
+                }, [data]);
+                
+                return (
+                  <ul>
+                    {processedData.map(item => (
+                      <li key={item.id} onClick={() => onItemClick(item.id)}>
+                        {item.formattedValue}
+                      </li>
+                    ))}
+                  </ul>
+                );
+              });
+              
+              // Usando o componente otimizado
+              function ParentComponent({ items }) {
+                const handleItemClick = useCallback((id) => {
+                  console.log('Item clicked:', id);
+                }, []);
+                
+                return <ExpensiveComponent data={items} onItemClick={handleItemClick} />;
+              }
+            </code>
+          </example>
+        </practice>
+      </practices>
+    </category>
+    
+    <category id="remix-practices" name="Remix Best Practices">
+      <practices>
+        <practice id="routing" name="Roteamento">
+          <description>Utilizar o sistema de roteamento do Remix de forma eficiente</description>
+          <guidelines>
+            <guideline>Organizar rotas de forma hierárquica para refletir a estrutura da UI</guideline>
+            <guideline>Usar rotas aninhadas para compartilhar layout entre páginas</guideline>
+            <guideline>Utilizar parâmetros dinâmicos para rotas que dependem de dados</guideline>
+            <guideline>Implementar rotas de erro para tratamento adequado de falhas</guideline>
+          </guidelines>
+          <example>
+            <code>
+              // Estrutura de arquivos de rotas:
+              // app/
+              //   routes/
+              //     __layout.tsx        // Layout raiz
+              //     index.tsx           // Página inicial
+              //     dashboard/
+              //       index.tsx         // Dashboard principal
+              //       projects/
+              //         index.tsx       // Lista de projetos
+              //         $projectId.tsx  // Detalhe do projeto
+              //         new.tsx         // Novo projeto
+              //     settings/
+              //       index.tsx         // Página de configurações
+              //       profile.tsx      // Configurações de perfil
+              
+              // Exemplo de rota com parâmetro dinâmico
+              // app/routes/dashboard/projects/$projectId.tsx
+              import { json } from '@remix-run/node';
+              import { useLoaderData } from '@remix-run/react';
+              import { getProjectById } from '~/models/project.server';
+              
+              export async function loader({ params }) {
+                const project = await getProjectById(params.projectId);
+                
+                if (!project) {
+                  throw new Response('Not Found', { status: 404 });
+                }
+                
+                return json({ project });
+              }
+              
+              export default function ProjectDetail() {
+                const { project } = useLoaderData();
+                
+                return (
+                  <div>
+                    <h1>{project.name}</h1>
+                    <p>{project.description}</p>
+                  </div>
+                );
+              }
+            </code>
+          </example>
+        </practice>
+        
+        <practice id="loaders-actions" name="Loaders e Actions">
+          <description>Utilizar loaders e actions para gerenciamento de dados</description>
+          <guidelines>
+            <guideline>Carregar dados no servidor com loaders sempre que possível</guideline>
+            <guideline>Validar dados em actions antes de processá-los</guideline>
+            <guideline>Retornar respostas HTTP apropriadas (códigos de status, headers)</guideline>
+            <guideline>Tratar erros de forma adequada em loaders e actions</guideline>
+          </guidelines>
+          <example>
+            <code>
+              // Bom: Loader e action bem estruturados
+              import { json, redirect } from '@remix-run/node';
+              import { useLoaderData, Form } from '@remix-run/react';
+              import { getPost, updatePost } from '~/models/post.server';
+              import { requireUserId } from '~/session.server';
+              import { z } from 'zod';
+              
+              const UpdatePostSchema = z.object({
+                title: z.string().min(1, 'Title is required'),
+                content: z.string().min(1, 'Content is required'),
+                published: z.coerce.boolean(),
+              });
+              
+              export async function loader({ request, params }) {
+                const userId = await requireUserId(request);
+                const post = await getPost(params.postId);
+                
+                if (!post || post.authorId !== userId) {
+                  throw new Response('Not Found', { status: 404 });
+                }
+                
+                return json({ post });
+              }
+              
+              export async function action({ request, params }) {
+                const userId = await requireUserId(request);
+                const formData = await request.formData();
+                
+                const rawData = Object.fromEntries(formData);
+                const result = UpdatePostSchema.safeParse(rawData);
+                
+                if (!result.success) {
+                  return json(
+                    { errors: result.error.flatten().fieldErrors },
+                    { status: 400 }
+                  );
+                }
+                
+                const { title, content, published } = result.data;
+                
+                await updatePost(params.postId, {
+                  title,
+                  content,
+                  published,
+                });
+                
+                return redirect(`/posts/${params.postId}`);
+              }
+              
+              export default function EditPost() {
+                const { post } = useLoaderData();
+                const actionData = useActionData();
+                
+                return (
+                  <Form method="post">
+                    <div>
+                      <label>Title</label>
+                      <input
+                        type="text"
+                        name="title"
+                        defaultValue={post.title}
+                        className={actionData?.errors?.title ? 'error' : ''}
+                      />
+                      {actionData?.errors?.title && (
+                        <p className="error">{actionData.errors.title}</p>
+                      )}
+                    </div>
+                    
+                    <div>
+                      <label>Content</label>
+                      <textarea
+                        name="content"
+                        defaultValue={post.content}
+                        className={actionData?.errors?.content ? 'error' : ''}
+                      />
+                      {actionData?.errors?.content && (
+                        <p className="error">{actionData.errors.content}</p>
+                      )}
+                    </div>
+                    
+                    <div>
+                      <label>
+                        <input
+                          type="checkbox"
+                          name="published"
+                          defaultChecked={post.published}
+                        />
+                        Published
+                      </label>
+                    </div>
+                    
+                    <button type="submit">Save</button>
+                  </Form>
+                );
+              }
+            </code>
+          </example>
+        </practice>
+        
+        <practice id="data-mutations" name="Mutações de Dados">
+          <description>Gerenciar mutações de dados de forma eficiente</description>
+          <guidelines>
+            <guideline>Usar o componente Form do Remix para mutações de dados</guideline>
+            <guideline>Implementar estratégias de revalidação após mutações</guideline>
+            <guideline>Utilizar o hook useFetcher para mutações que não causam navegação</guideline>
+            <guideline>Mostrar indicadores de carregamento durante mutações</guideline>
+          </guidelines>
+          <example>
+            <code>
+              // Bom: Usando useFetcher para mutação sem navegação
+              import { json } from '@remix-run/node';
+              import { useFetcher } from '@remix-run/react';
+              import { toggleTaskCompletion } from '~/models/task.server';
+              
+              export async function action({ request }) {
+                const formData = await request.formData();
+                const taskId = formData.get('taskId');
+                const completed = formData.get('completed') === 'true';
+                
+                await toggleTaskCompletion(taskId, completed);
+                
+                return json({ success: true });
+              }
+              
+              function TaskItem({ task }) {
+                const fetcher = useFetcher();
+                
+                const handleToggle = (completed) => {
+                  fetcher.submit(
+                    { taskId: task.id, completed },
+                    { method: 'post', action: '/api/toggle-task' }
+                  );
+                };
+                
+                return (
+                  <div className={`task ${task.completed ? 'completed' : ''}`}>
+                    <input
+                      type="checkbox"
+                      checked={task.completed}
+                      onChange={(e) => handleToggle(e.target.checked)}
+                      disabled={fetcher.state === 'submitting'}
+                    />
+                    <span>{task.title}</span>
+                    {fetcher.state === 'submitting' && <span>Saving...</span>}
+                  </div>
+                );
+              }
+            </code>
+          </example>
+        </practice>
+        
+        <practice id="error-handling" name="Tratamento de Erros">
+          <description>Implementar tratamento de erros robusto</description>
+          <guidelines>
+            <guideline>Implementar ErrorBoundary para capturar erros em rotas</guideline>
+            <guideline>Retornar respostas HTTP apropriadas para diferentes tipos de erros</guideline>
+            <guideline>Fornecer feedback claro ao usuário sobre erros</guideline>
+            <guideline>Registrar erros para análise posterior</guideline>
+          </guidelines>
+          <example>
+            <code>
+              // Bom: ErrorBoundary e tratamento de erros
+              import { isRouteErrorResponse, useRouteError } from '@remix-run/react';
+              
+              export function ErrorBoundary() {
+                const error = useRouteError();
+                
+                if (isRouteErrorResponse(error)) {
+                  return (
+                    <div>
+                      <h1>
+                        {error.status} {error.statusText}
+                      </h1>
+                      <p>{error.data.message}</p>
+                    </div>
+                  );
+                }
+                
+                return (
+                  <div>
+                    <h1>Oops! Something went wrong.</h1>
+                    <p>{error.message || 'An unexpected error occurred.'}</p>
+                  </div>
+                );
+              }
+              
+              // Em um loader ou action
+              export async function loader({ request, params }) {
+                try {
+                  const item = await getItem(params.itemId);
+                  
+                  if (!item) {
+                    throw new Response('Not Found', { status: 404 });
+                  }
+                  
+                  return json({ item });
+                } catch (error) {
+                  console.error('Error loading item:', error);
+                  throw new Response('Error loading item', { status: 500 });
+                }
+              }
+            </code>
+          </example>
+        </practice>
+      </practices>
+    </category>
+    
+    <category id="ui-design-practices" name="UI Design Best Practices">
+      <practices>
+        <practice id="design-system" name="Sistema de Design">
+          <description>Criar e manter um sistema de design consistente</description>
+          <guidelines>
+            <guideline>Definir tokens de design (cores, espaçamentos, tipografia)</guideline>
+            <guideline>Criar componentes reutilizáveis que seguem o sistema de design</guideline>
+            <guideline>Documentar o sistema de design para referência da equipe</guideline>
+            <guideline>Manter consistência visual em toda a aplicação</guideline>
+          </guidelines>
+          <example>
+            <code>
+              // tokens.ts
+              export const colors = {
+                primary: {
+                  50: '#f0f9ff',
+                  100: '#e0f2fe',
+                  500: '#0ea5e9',
+                  700: '#0369a1',
+                  900: '#0c4a6e',
+                },
+                gray: {
+                  50: '#f9fafb',
+                  100: '#f3f4f6',
+                  500: '#6b7280',
+                  700: '#374151',
+                  900: '#111827',
+                },
+              };
+              
+              export const spacing = {
+                xs: '0.25rem',  // 4px
+                sm: '0.5rem',   // 8px
+                md: '1rem',     // 16px
+                lg: '1.5rem',   // 24px
+                xl: '2rem',     // 32px
+                '2xl': '3rem',  // 48px
+              };
+              
+              export const typography = {
+                fontFamily: {
+                  sans: ['Inter', 'system-ui', 'sans-serif'],
+                },
+                fontSize: {
+                  xs: '0.75rem',   // 12px
+                  sm: '0.875rem',  // 14px
+                  base: '1rem',    // 16px
+                  lg: '1.125rem',  // 18px
+                  xl: '1.25rem',   // 20px
+                  '2xl': '1.5rem', // 24px
+                },
+                fontWeight: {
+                  normal: '400',
+                  medium: '500',
+                  semibold: '600',
+                  bold: '700',
+                },
+              };
+              
+              // Button.tsx
+              import { colors, spacing, typography } from './tokens';
+              
+              interface ButtonProps {
+                variant?: 'primary' | 'secondary' | 'ghost';
+                size?: 'sm' | 'md' | 'lg';
+                children: React.ReactNode;
+                onClick?: () => void;
+              }
+              
+              export function Button({ variant = 'primary', size = 'md', children, onClick }: ButtonProps) {
+                const baseStyles = {
+                  fontFamily: typography.fontFamily.sans,
+                  fontWeight: typography.fontWeight.medium,
+                  borderRadius: '0.375rem',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                };
+                
+                const variantStyles = {
+                  primary: {
+                    backgroundColor: colors.primary[500],
+                    color: 'white',
+                    '&:hover': {
+                      backgroundColor: colors.primary[700],
+                    },
+                  },
+                  secondary: {
+                    backgroundColor: colors.gray[200],
+                    color: colors.gray[900],
+                    '&:hover': {
+                      backgroundColor: colors.gray[300],
+                    },
+                  },
+                  ghost: {
+                    backgroundColor: 'transparent',
+                    color: colors.primary[500],
+                    '&:hover': {
+                      backgroundColor: colors.primary[50],
+                    },
+                  },
+                };
+                
+                const sizeStyles = {
+                  sm: {
+                    padding: `${spacing.xs} ${spacing.sm}`,
+                    fontSize: typography.fontSize.sm,
+                  },
+                  md: {
+                    padding: `${spacing.sm} ${spacing.md}`,
+                    fontSize: typography.fontSize.base,
+                  },
+                  lg: {
+                    padding: `${spacing.md} ${spacing.lg}`,
+                    fontSize: typography.fontSize.lg,
+                  },
+                };
+                
+                return (
+                  <button
+                    onClick={onClick}
+                    style={{
+                      ...baseStyles,
+                      ...variantStyles[variant],
+                      ...sizeStyles[size],
+                    }}
+                  >
+                    {children}
+                  </button>
+                );
+              }
+            </code>
+          </example>
+        </practice>
+        
+        <practice id="responsive-design" name="Design Responsivo">
+          <description>Criar interfaces que funcionam bem em todos os dispositivos</description>
+          <guidelines>
+            <guideline>Adotar abordagem mobile-first</guideline>
+            <guideline>Usar media queries para adaptar layout a diferentes tamanhos de tela</guideline>
+            <guideline>Garantir que elementos interativos tenham tamanho adequado para toque</guideline>
+            <guideline>Otimizar imagens e outros assets para diferentes resoluções</guideline>
+          </guidelines>
+          <example>
+            <code>
+              // Card.tsx
+              import React from 'react';
+              
+              interface CardProps {
+                title: string;
+                description: string;
+                imageUrl: string;
+              }
+              
+              export function Card({ title, description, imageUrl }: CardProps) {
+                return (
+                  <div className="card">
+                    <div className="card-image">
+                      <img src={imageUrl} alt={title} />
+                    </div>
+                    <div className="card-content">
+                      <h3 className="card-title">{title}</h3>
+                      <p className="card-description">{description}</p>
+                    </div>
+                  </div>
+                );
+              }
+              
+              // Card.css
+              .card {
+                border-radius: 0.5rem;
+                overflow: hidden;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+              }
+              
+              .card:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+              }
+              
+              .card-image {
+                width: 100%;
+                height: 200px;
+                overflow: hidden;
+              }
+              
+              .card-image img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+              }
+              
+              .card-content {
+                padding: 1rem;
+              }
+              
+              .card-title {
+                font-size: 1.25rem;
+                font-weight: 600;
+                margin-bottom: 0.5rem;
+              }
+              
+              .card-description {
+                font-size: 1rem;
+                color: #4b5563;
+              }
+              
+              /* Media queries para responsividade */
+              @media (max-width: 768px) {
+                .card-image {
+                  height: 150px;
+                }
+                
+                .card-title {
+                  font-size: 1.125rem;
+                }
+                
+                .card-description {
+                  font-size: 0.875rem;
+                }
+              }
+              
+              @media (max-width: 480px) {
+                .card-content {
+                  padding: 0.75rem;
+                }
+                
+                .card-title {
+                  font-size: 1rem;
+                }
+              }
+              
+              // GridList.tsx
+              import React from 'react';
+              import { Card } from './Card';
+              
+              interface GridListProps {
+                items: Array<{
+                  id: string;
+                  title: string;
+                  description: string;
+                  imageUrl: string;
+                }>;
+              }
+              
+              export function GridList({ items }: GridListProps) {
+                return (
+                  <div className="grid-list">
+                    {items.map(item => (
+                      <Card
+                        key={item.id}
+                        title={item.title}
+                        description={item.description}
+                        imageUrl={item.imageUrl}
+                      />
+                    ))}
+                  </div>
+                );
+              }
+              
+              /* GridList.css */
+              .grid-list {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 1.5rem;
+              }
+              
+              @media (max-width: 768px) {
+                .grid-list {
+                  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                  gap: 1rem;
+                }
+              }
+              
+              @media (max-width: 480px) {
+                .grid-list {
+                  grid-template-columns: 1fr;
+                }
+              }
+            </code>
+          </example>
+        </practice>
+        
+        <practice id="accessibility" name="Acessibilidade">
+          <description>Garantir que a interface seja acessível a todos os usuários</description>
+          <guidelines>
+            <guideline>Usar HTML semântico para estrutura da página</guideline>
+            <guideline>Fornecer alternativas textuais para conteúdo não textual</guideline>
+            <guideline>Garantir contraste adequado entre texto e fundo</guideline>
+            <guideline>Tornar todos os elementos interativos acessíveis por teclado</guideline>
+            <guideline>Usar atributos ARIA quando necessário</guideline>
+          </guidelines>
+          <example>
+            <code>
+              // Form.tsx
+              import React, { useState } from 'react';
+              
+              interface FormProps {
+                onSubmit: (data: { name: string; email: string; message: string }) => void;
+              }
+              
+              export function Form({ onSubmit }: FormProps) {
+                const [formData, setFormData] = useState({
+                  name: '',
+                  email: '',
+                  message: '',
+                });
+                
+                const [errors, setErrors] = useState({
+                  name: '',
+                  email: '',
+                  message: '',
+                });
+                
+                const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+                  const { name, value } = e.target;
+                  setFormData(prev => ({ ...prev, [name]: value }));
+                  
+                  // Clear error when user starts typing
+                  if (errors[name as keyof typeof errors]) {
+                    setErrors(prev => ({ ...prev, [name]: '' }));
+                  }
+                };
+                
+                const validateForm = () => {
+                  let isValid = true;
+                  const newErrors = { name: '', email: '', message: '' };
+                  
+                  if (!formData.name.trim()) {
+                    newErrors.name = 'Name is required';
+                    isValid = false;
+                  }
+                  
+                  if (!formData.email.trim()) {
+                    newErrors.email = 'Email is required';
+                    isValid = false;
+                  } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+                    newErrors.email = 'Email is invalid';
+                    isValid = false;
+                  }
+                  
+                  if (!formData.message.trim()) {
+                    newErrors.message = 'Message is required';
+                    isValid = false;
+                  }
+                  
+                  setErrors(newErrors);
+                  return isValid;
+                };
+                
+                const handleSubmit = (e: React.FormEvent) => {
+                  e.preventDefault();
+                  
+                  if (validateForm()) {
+                    onSubmit(formData);
+                    // Reset form
+                    setFormData({ name: '', email: '', message: '' });
+                  }
+                };
+                
+                return (
+                  <form onSubmit={handleSubmit} noValidate>
+                    <div className="form-group">
+                      <label htmlFor="name">Name</label>
+                      <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        aria-invalid={!!errors.name}
+                        aria-describedby={errors.name ? 'name-error' : undefined}
+                        required
+                      />
+                      {errors.name && (
+                        <span id="name-error" className="error-message">
+                          {errors.name}
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="form-group">
+                      <label htmlFor="email">Email</label>
+                      <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        aria-invalid={!!errors.email}
+                        aria-describedby={errors.email ? 'email-error' : undefined}
+                        required
+                      />
+                      {errors.email && (
+                        <span id="email-error" className="error-message">
+                          {errors.email}
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="form-group">
+                      <label htmlFor="message">Message</label>
+                      <textarea
+                        id="message"
+                        name="message"
+                        value={formData.message}
+                        onChange={handleChange}
+                        rows={4}
+                        aria-invalid={!!errors.message}
+                        aria-describedby={errors.message ? 'message-error' : undefined}
+                        required
+                      />
+                      {errors.message && (
+                        <span id="message-error" className="error-message">
+                          {errors.message}
+                        </span>
+                      )}
+                    </div>
+                    
+                    <button type="submit">Submit</button>
+                  </form>
+                );
+              }
+              
+              // Tabs.tsx
+              import React, { useState } from 'react';
+              
+              interface Tab {
+                id: string;
+                label: string;
+                content: React.ReactNode;
+              }
+              
+              interface TabsProps {
+                tabs: Tab[];
+              }
+              
+              export function Tabs({ tabs }: TabsProps) {
+                const [activeTabId, setActiveTabId] = useState(tabs[0]?.id || '');
+                
+                const handleTabClick = (tabId: string) => {
+                  setActiveTabId(tabId);
+                };
+                
+                const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+                  const tabCount = tabs.length;
+                  
+                  switch (e.key) {
+                    case 'ArrowRight':
+                      e.preventDefault();
+                      const nextIndex = (index + 1) % tabCount;
+                      document.getElementById(`tab-${tabs[nextIndex].id}`)?.focus();
+                      setActiveTabId(tabs[nextIndex].id);
+                      break;
+                      
+                    case 'ArrowLeft':
+                      e.preventDefault();
+                      const prevIndex = (index - 1 + tabCount) % tabCount;
+                      document.getElementById(`tab-${tabs[prevIndex].id}`)?.focus();
+                      setActiveTabId(tabs[prevIndex].id);
+                      break;
+                      
+                    case 'Home':
+                      e.preventDefault();
+                      document.getElementById(`tab-${tabs[0].id}`)?.focus();
+                      setActiveTabId(tabs[0].id);
+                      break;
+                      
+                    case 'End':
+                      e.preventDefault();
+                      document.getElementById(`tab-${tabs[tabCount - 1].id}`)?.focus();
+                      setActiveTabId(tabs[tabCount - 1].id);
+                      break;
+                      
+                    default:
+                      break;
+                  }
+                };
+                
+                return (
+                  <div className="tabs">
+                    <div role="tablist" aria-label="Sample tabs">
+                      {tabs.map((tab, index) => (
+                        <button
+                          key={tab.id}
+                          id={`tab-${tab.id}`}
+                          type="button"
+                          role="tab"
+                          aria-selected={activeTabId === tab.id}
+                          aria-controls={`tabpanel-${tab.id}`}
+                          tabIndex={activeTabId === tab.id ? 0 : -1}
+                          onClick={() => handleTabClick(tab.id)}
+                          onKeyDown={(e) => handleKeyDown(e, index)}
+                          className={activeTabId === tab.id ? 'active' : ''}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+                    
+                    <div>
+                      {tabs.map(tab => (
+                        <div
+                          key={tab.id}
+                          id={`tabpanel-${tab.id}`}
+                          role="tabpanel"
+                          aria-labelledby={`tab-${tab.id}`}
+                          tabIndex={0}
+                          hidden={activeTabId !== tab.id}
+                        >
+                          {tab.content}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
+            </code>
+          </example>
+        </practice>
+        
+        <practice id="user-feedback" name="Feedback ao Usuário">
+          <description>Fornecer feedback claro e oportuno ao usuário</description>
+          <guidelines>
+            <guideline>Mostrar indicadores de carregamento durante operações assíncronas</guideline>
+            <guideline>Fornecer feedback visual para ações do usuário</guideline>
+            <guideline>Exibir mensagens de erro e sucesso de forma clara</guideline>
+            <guideline>Usar animações e transições para melhorar a experiência do usuário</guideline>
+          </guidelines>
+          <example>
+            <code>
+              // Button.tsx
+              import React from 'react';
+              
+              interface ButtonProps {
+                children: React.ReactNode;
+                onClick?: () => void;
+                isLoading?: boolean;
+                isSuccess?: boolean;
+                isError?: boolean;
+                disabled?: boolean;
+              }
+              
+              export function Button({ 
+                children, 
+                onClick, 
+                isLoading = false, 
+                isSuccess = false, 
+                isError = false,
+                disabled = false 
+              }: ButtonProps) {
+                const getButtonState = () => {
+                  if (isLoading) return 'loading';
+                  if (isSuccess) return 'success';
+                  if (isError) return 'error';
+                  return 'default';
+                };
+                
+                const buttonState = getButtonState();
+                
+                const renderContent = () => {
+                  if (isLoading) {
+                    return (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Loading...
+                      </>
+                    );
+                  }
+                  
+                  if (isSuccess) {
+                    return (
+                      <>
+                        <svg className="-ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        Success!
+                      </>
+                    );
+                  }
+                  
+                  if (isError) {
+                    return (
+                      <>
+                        <svg className="-ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                        Error!
+                      </>
+                    );
+                  }
+                  
+                  return children;
+                };
+                
+                return (
+                  <button
+                    onClick={onClick}
+                    disabled={disabled || isLoading}
+                    className={`button button-${buttonState}`}
+                  >
+                    {renderContent()}
+                  </button>
+                );
+              }
+              
+              /* Button.css */
+              .button {
+                padding: 0.5rem 1rem;
+                border-radius: 0.375rem;
+                font-weight: 500;
+                border: none;
+                cursor: pointer;
+                transition: all 0.2s ease;
+              }
+              
+              .button-default {
+                background-color: #3b82f6;
+                color: white;
+              }
+              
+              .button-default:hover:not(:disabled) {
+                background-color: #2563eb;
+              }
+              
+              .button-loading {
+                background-color: #60a5fa;
+                color: white;
+                cursor: not-allowed;
+              }
+              
+              .button-success {
+                background-color: #10b981;
+                color: white;
+              }
+              
+              .button-error {
+                background-color: #ef4444;
+                color: white;
+              }
+              
+              .button:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+              }
+              
+              // Toast.tsx
+              import React, { useEffect } from 'react';
+              
+              interface ToastProps {
+                message: string;
+                type: 'success' | 'error' | 'info' | 'warning';
+                duration?: number;
+                onClose: () => void;
+              }
+              
+              export function Toast({ message, type, duration = 3000, onClose }: ToastProps) {
+                useEffect(() => {
+                  const timer = setTimeout(() => {
+                    onClose();
+                  }, duration);
+                  
+                  return () => clearTimeout(timer);
+                }, [duration, onClose]);
+                
+                const getIcon = () => {
+                  switch (type) {
+                    case 'success':
+                      return (
+                        <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      );
+                    case 'error':
+                      return (
+                        <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                      );
+                    case 'warning':
+                      return (
+                        <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                      );
+                    case 'info':
+                      return (
+                        <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                        </svg>
+                      );
+                  }
+                };
+                
+                return (
+                  <div className={`toast toast-${type}`}>
+                    <div className="toast-icon">{getIcon()}</div>
+                    <div className="toast-message">{message}</div>
+                    <button className="toast-close" onClick={onClose}>
+                      <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+                );
+              }
+              
+              /* Toast.css */
+              .toast {
+                display: flex;
+                align-items: center;
+                padding: 0.75rem 1rem;
+                border-radius: 0.375rem;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                margin-bottom: 0.5rem;
+                animation: slideIn 0.3s ease-out;
+              }
+              
+              @keyframes slideIn {
+                from {
+                  transform: translateX(100%);
+                  opacity: 0;
+                }
+                to {
+                  transform: translateX(0);
+                  opacity: 1;
+                }
+              }
+              
+              .toast-success {
+                background-color: #d1fae5;
+                color: #065f46;
+              }
+              
+              .toast-error {
+                background-color: #fee2e2;
+                color: #991b1b;
+              }
+              
+              .toast-warning {
+                background-color: #fef3c7;
+                color: #92400e;
+              }
+              
+              .toast-info {
+                background-color: #dbeafe;
+                color: #1e40af;
+              }
+              
+              .toast-icon {
+                margin-right: 0.75rem;
+              }
+              
+              .toast-message {
+                flex: 1;
+              }
+              
+              .toast-close {
+                background: none;
+                border: none;
+                cursor: pointer;
+                margin-left: 0.75rem;
+                opacity: 0.7;
+              }
+              
+              .toast-close:hover {
+                opacity: 1;
+              }
+            </code>
+          </example>
+        </practice>
+      </practices>
+    </category>
+    
+    <category id="fullstack-practices" name="Full-Stack Best Practices">
+      <practices>
+        <practice id="api-design" name="Design de API">
+          <description>Projetar APIs consistentes e intuitivas</description>
+          <guidelines>
+            <guideline>Usar convenções RESTful para endpoints</guideline>
+            <guideline>Utilizar métodos HTTP apropriados para cada operação</guideline>
+            <guideline>Retornar códigos de status HTTP significativos</guideline>
+            <guideline>Documentar APIs com OpenAPI/Swagger</guideline>
+          </guidelines>
+          <example>
+            <code>
+              // app/routes/api/users.tsx
+              import { json, LoaderFunctionArgs, ActionFunctionArgs } from '@remix-run/node';
+              import { requireUserId } from '~/session.server';
+              import { getUsers, getUserById, createUser, updateUser, deleteUser } from '~/models/user.server';
+              
+              // GET /api/users - List all users
+              // GET /api/users/:id - Get a specific user
+              export async function loader({ request, params }: LoaderFunctionArgs) {
+                await requireUserId(request);
+                
+                try {
+                  if (params.id) {
+                    const user = await getUserById(params.id);
+                    
+                    if (!user) {
+                      return json({ error: 'User not found' }, { status: 404 });
+                    }
+                    
+                    return json({ user });
+                  } else {
+                    const url = new URL(request.url);
+                    const searchParams = new URLSearchParams(url.search);
+                    const page = parseInt(searchParams.get('page') || '1');
+                    const limit = parseInt(searchParams.get('limit') || '10');
+                    
+                    const users = await getUsers({ page, limit });
+                    return json({ users });
+                  }
+                } catch (error) {
+                  return json({ error: 'Failed to fetch users' }, { status: 500 });
+                }
+              }
+              
+              // POST /api/users - Create a new user
+              // PUT /api/users/:id - Update a user
+              // DELETE /api/users/:id - Delete a user
+              export async function action({ request, params }: ActionFunctionArgs) {
+                await requireUserId(request);
+                
+                const method = request.method;
+                
+                try {
+                  switch (method) {
+                    case 'POST': {
+                      const userData = await request.json();
+                      const user = await createUser(userData);
+                      return json({ user }, { status: 201 });
+                    }
+                    
+                    case 'PUT': {
+                      if (!params.id) {
+                        return json({ error: 'User ID is required' }, { status: 400 });
+                      }
+                      
+                      const userData = await request.json();
+                      const user = await updateUser(params.id, userData);
+                      
+                      if (!user) {
+                        return json({ error: 'User not found' }, { status: 404 });
+                      }
+                      
+                      return json({ user });
+                    }
+                    
+                    case 'DELETE': {
+                      if (!params.id) {
+                        return json({ error: 'User ID is required' }, { status: 400 });
+                      }
+                      
+                      const deleted = await deleteUser(params.id);
+                      
+                      if (!deleted) {
+                        return json({ error: 'User not found' }, { status: 404 });
+                      }
+                      
+                      return json({ success: true });
+                    }
+                    
+                    default:
+                      return json({ error: 'Method not allowed' }, { status: 405 });
+                  }
+                } catch (error) {
+                  return json({ error: 'Failed to process request' }, { status: 500 });
+                }
+              }
+            </code>
+          </example>
+        </practice>
+        
+        <practice id="data-validation" name="Validação de Dados">
+          <description>Validar dados de forma rigorosa em todas as camadas</description>
+          <guidelines>
+            <guideline>Validar dados no cliente para feedback imediato</guideline>
+            <guideline>Validar dados no servidor para segurança</guideline>
+            <guideline>Usar bibliotecas de validação como Zod ou Yup</guideline>
+            <guideline>Sanitizar dados para prevenir ataques</guideline>
+          </guidelines>
+          <example>
+            <code>
+              // app/schemas/user.schema.ts
+              import { z } from 'zod';
+              
+              export const CreateUserSchema = z.object({
+                name: z.string().min(1, 'Name is required').max(100, 'Name must be less than 100 characters'),
+                email: z.string().email('Invalid email address'),
+                password: z.string().min(8, 'Password must be at least 8 characters')
+                  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+                  .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+                  .regex(/[0-9]/, 'Password must contain at least one number'),
+                role: z.enum(['admin', 'user', 'moderator']).default('user'),
+              });
+              
+              export const UpdateUserSchema = CreateUserSchema.partial().extend({
+                id: z.string().cuid(),
+              });
+              
+              export type CreateUserInput = z.infer<typeof CreateUserSchema>;
+              export type UpdateUserInput = z.infer<typeof UpdateUserSchema>;
+              
+              // app/models/user.server.ts
+              import { CreateUserInput, UpdateUserInput } from '~/schemas/user.schema';
+              
+              export async function createUser(input: CreateUserInput) {
+                // Validate input
+                const result = CreateUserSchema.safeParse(input);
+                
+                if (!result.success) {
+                  throw new Error('Invalid input data');
+                }
+                
+                const data = result.data;
+                
+                // Check if user with email already exists
+                const existingUser = await prisma.user.findUnique({
+                  where: { email: data.email },
+                });
+                
+                if (existingUser) {
+                  throw new Error('User with this email already exists');
+                }
+                
+                // Hash password
+                const hashedPassword = await bcrypt.hash(data.password, 10);
+                
+                // Create user
+                const user = await prisma.user.create({
+                  data: {
+                    name: data.name,
+                    email: data.email,
+                    passwordHash: hashedPassword,
+                    role: data.role,
+                  },
+                });
+                
+                // Return user without password hash
+                return {
+                  id: user.id,
+                  name: user.name,
+                  email: user.email,
+                  role: user.role,
+                  createdAt: user.createdAt,
+                  updatedAt: user.updatedAt,
+                };
+              }
+              
+              export async function updateUser(id: string, input: UpdateUserInput) {
+                // Validate input
+                const result = UpdateUserSchema.safeParse({ id, ...input });
+                
+                if (!result.success) {
+                  throw new Error('Invalid input data');
+                }
+                
+                const data = result.data;
+                
+                // Check if user exists
+                const existingUser = await prisma.user.findUnique({
+                  where: { id },
+                });
+                
+                if (!existingUser) {
+                  throw new Error('User not found');
+                }
+                
+                // Check if email is being changed and if it already exists
+                if (data.email && data.email !== existingUser.email) {
+                  const emailExists = await prisma.user.findUnique({
+                    where: { email: data.email },
+                  });
+                  
+                  if (emailExists) {
+                    throw new Error('User with this email already exists');
+                  }
+                }
+                
+                // Prepare update data
+                const updateData: any = {};
+                
+                if (data.name) updateData.name = data.name;
+                if (data.email) updateData.email = data.email;
+                if (data.role) updateData.role = data.role;
+                
+                // Hash password if provided
+                if (data.password) {
+                  updateData.passwordHash = await bcrypt.hash(data.password, 10);
+                }
+                
+                // Update user
+                const user = await prisma.user.update({
+                  where: { id },
+                  data: updateData,
+                });
+                
+                // Return user without password hash
+                return {
+                  id: user.id,
+                  name: user.name,
+                  email: user.email,
+                  role: user.role,
+                  createdAt: user.createdAt,
+                  updatedAt: user.updatedAt,
+                };
+              }
+              
+              // app/routes/users/new.tsx
+              import { json, ActionFunctionArgs } from '@remix-run/node';
+              import { useActionData, Form } from '@remix-run/react';
+              import { createUser } from '~/models/user.server';
+              import { CreateUserSchema, type CreateUserInput } from '~/schemas/user.schema';
+              import { zodErrorsToFormErrors } from '~/utils/validation';
+              
+              export async function action({ request }: ActionFunctionArgs) {
+                const formData = await request.formData();
+                const rawData = Object.fromEntries(formData);
+                
+                // Validate form data
+                const result = CreateUserSchema.safeParse(rawData);
+                
+                if (!result.success) {
+                  return json(
+                    { 
+                      errors: zodErrorsToFormErrors(result.error) 
+                    },
+                    { status: 400 }
+                  );
+                }
+                
+                const data = result.data as CreateUserInput;
+                
+                try {
+                  const user = await createUser(data);
+                  return redirect(`/users/${user.id}`);
+                } catch (error) {
+                  return json(
+                    { 
+                      errors: { 
+                        form: error.message 
+                      } 
+                    },
+                    { status: 400 }
+                  );
+                }
+              }
+              
+              export default function NewUser() {
+                const actionData = useActionData();
+                
+                return (
+                  <Form method="post">
+                    <div>
+                      <label htmlFor="name">Name</label>
+                      <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        className={actionData?.errors?.name ? 'error' : ''}
+                      />
+                      {actionData?.errors?.name && (
+                        <p className="error">{actionData.errors.name}</p>
+                      )}
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="email">Email</label>
+                      <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        className={actionData?.errors?.email ? 'error' : ''}
+                      />
+                      {actionData?.errors?.email && (
+                        <p className="error">{actionData.errors.email}</p>
+                      )}
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="password">Password</label>
+                      <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        className={actionData?.errors?.password ? 'error' : ''}
+                      />
+                      {actionData?.errors?.password && (
+                        <p className="error">{actionData.errors.password}</p>
+                      )}
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="role">Role</label>
+                      <select id="role" name="role">
+                        <option value="user">User</option>
+                        <option value="moderator">Moderator</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
+                    
+                    {actionData?.errors?.form && (
+                      <p className="error">{actionData.errors.form}</p>
+                    )}
+                    
+                    <button type="submit">Create User</button>
+                  </Form>
+                );
+              }
+            </code>
+          </example>
+        </practice>
+        
+        <practice id="security" name="Segurança">
+          <description>Implementar práticas de segurança robustas</description>
+          <guidelines>
+            <guideline>Validar e sanitizar todas as entradas de usuário</guideline>
+            <guideline>Usar HTTPS em todas as comunicações</guideline>
+            <guideline>Implementar autenticação e autorização adequadas</guideline>
+            <guideline>Proteger contra ataques comuns (XSS, CSRF, SQL Injection)</guideline>
+            <guideline>Armazenar senhas de forma segura (hash + salt)</guideline>
+          </guidelines>
+          <example>
+            <code>
+              // app/session.server.ts
+              import { createCookieSessionStorage, redirect } from '@remix-run/node';
+              import bcrypt from 'bcryptjs';
+              
+              const sessionSecret = process.env.SESSION_SECRET;
+              if (!sessionSecret) {
+                throw new Error('SESSION_SECRET must be set');
+              }
+              
+              const storage = createCookieSessionStorage({
+                cookie: {
+                  name: '__session',
+                  secure: process.env.NODE_ENV === 'production',
+                  secrets: [sessionSecret],
+                  sameSite: 'lax',
+                  path: '/',
+                  maxAge: 60 * 60 * 24 * 30, // 30 days
+                  httpOnly: true,
+                },
+              });
+              
+              export async function getUserSession(request: Request) {
+                return storage.getSession(request.headers.get('Cookie'));
+              }
+              
+              export async function getUserId(request: Request): Promise<string | undefined> {
+                const session = await getUserSession(request);
+                const userId = session.get('userId');
+                return userId;
+              }
+              
+              export async function requireUserId(
+                request: Request,
+                redirectTo: string = new URL(request.url).pathname
+              ): Promise<string> {
+                const userId = await getUserId(request);
+                if (!userId) {
+                  const searchParams = new URLSearchParams([['redirectTo', redirectTo]]);
+                  throw redirect(`/login?${searchParams}`);
+                }
+                return userId;
+              }
+              
+              export async function createUserSession(
+                userId: string,
+                redirectTo: string
+              ) {
+                const session = await storage.getSession();
+                session.set('userId', userId);
+                return redirect(redirectTo, {
+                  headers: {
+                    'Set-Cookie': await storage.commitSession(session),
+                  },
+                });
+              }
+              
+              export async function logout(request: Request) {
+                const session = await getUserSession(request);
+                return redirect('/', {
+                  headers: {
+                    'Set-Cookie': await storage.destroySession(session),
+                  },
+                });
+              }
+              
+              // app/utils/security.server.ts
+              import bcrypt from 'bcryptjs';
+              import crypto from 'crypto';
+              
+              // Hash password
+              export async function hashPassword(password: string): Promise<string> {
+                const saltRounds = 12;
+                return bcrypt.hash(password, saltRounds);
+              }
+              
+              // Verify password
+              export async function verifyPassword(
+                password: string,
+                hashedPassword: string
+              ): Promise<boolean> {
+                return bcrypt.compare(password, hashedPassword);
+              }
+              
+              // Generate random token
+              export function generateRandomToken(length = 32): string {
+                return crypto
+                  .randomBytes(length)
+                  .toString('hex')
+                  .slice(0, length);
+              }
+              
+              // Sanitize input to prevent XSS
+              export function sanitizeInput(input: string): string {
+                return input
+                  .replace(/&/g, '&')
+                  .replace(/</g, '<')
+                  .replace(/>/g, '>')
+                  .replace(/"/g, '"')
+                  .replace(/'/g, '&#039;');
+              }
+              
+              // Validate and sanitize URL
+              export function sanitizeUrl(url: string): string {
+                try {
+                  const parsedUrl = new URL(url);
+                  
+                  // Allow only http and https protocols
+                  if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+                    return '/';
+              }
+              
+                  return parsedUrl.toString();
+                } catch (error) {
+                  return '/';
+                }
+              }
+              
+              // app/routes/login.tsx
+              import { json, ActionFunctionArgs } from '@remix-run/node';
+              import { useActionData, Form } from '@remix-run/react';
+              import { getUserByEmail, verifyPassword, createUserSession } from '~/models/user.server';
+              import { sanitizeInput } from '~/utils/security.server';
+              
+              export async function action({ request }: ActionFunctionArgs) {
+                const formData = await request.formData();
+                const email = sanitizeInput(String(formData.get('email') || ''));
+                const password = String(formData.get('password') || '');
+                
+                if (!email || !password) {
+                  return json({ error: 'Email and password are required' }, { status: 400 });
+                }
+                
+                const user = await getUserByEmail(email);
+                
+                if (!user || !(await verifyPassword(password, user.passwordHash))) {
+                  return json({ error: 'Invalid email or password' }, { status: 400 });
+                }
+                
+                return createUserSession(user.id, '/dashboard');
+              }
+              
+              export default function Login() {
+                const actionData = useActionData();
+                
+                return (
+                  <div>
+                    <h1>Login</h1>
+                    
+                    <Form method="post">
+                      <div>
+                        <label htmlFor="email">Email</label>
+                        <input
+                          type="email"
+                          id="email"
+                          name="email"
+                          required
+                        />
+                      </div>
+                      
+                      <div>
+                        <label htmlFor="password">Password</label>
+                        <input
+                          type="password"
+                          id="password"
+                          name="password"
+                          required
+                        />
+                      </div>
+                      
+                      {actionData?.error && (
+                        <p className="error">{actionData.error}</p>
+                      )}
+                      
+                      <button type="submit">Login</button>
+                    </Form>
+                  </div>
+                );
+              }
+            </code>
+          </example>
+        </practice>
+        
+        <practice id="testing" name="Testes">
+          <description>Implementar estratégias de testes abrangentes</description>
+          <guidelines>
+            <guideline>Escrever testes unitários para lógica de negócio</guideline>
+            <guideline>Testar componentes React com React Testing Library</guideline>
+            <guideline>Implementar testes de integração para fluxos críticos</guideline>
+            <guideline>Realizar testes end-to-end para cenários de usuário</guideline>
+            <guideline>Automatizar testes em pipeline de CI/CD</guideline>
+          </guidelines>
+          <example>
+            <code>
+              // app/utils/validation.test.ts
+              import { zodErrorsToFormErrors } from './validation';
+              import { z } from 'zod';
+              
+              describe('zodErrorsToFormErrors', () => {
+                it('should convert Zod errors to form errors', () => {
+                  const schema = z.object({
+                    name: z.string().min(1, 'Name is required'),
+                    email: z.string().email('Invalid email'),
+                  });
+                  
+                  const result = schema.safeParse({
+                    name: '',
+                    email: 'invalid-email',
+              });
+                  
+                  if (result.success) {
+                    throw new Error('Validation should have failed');
+              }
+                  
+                  const formErrors = zodErrorsToFormErrors(result.error);
+                  
+                  expect(formErrors).toEqual({
+                    name: 'Name is required',
+                    email: 'Invalid email',
+                  });
+                });
+                
+                it('should handle nested errors', () => {
+                  const schema = z.object({
+                    user: z.object({
+                      name: z.string().min(1, 'Name is required'),
+                    }),
+                  });
+                  
+                  const result = schema.safeParse({
+                    user: {
+                      name: '',
+                    },
+                  });
+                  
+                  if (result.success) {
+                    throw new Error('Validation should have failed');
+              }
+                  
+                  const formErrors = zodErrorsToFormErrors(result.error);
+                  
+                  expect(formErrors).toEqual({
+                    'user.name': 'Name is required',
+                  });
+                });
+              });
+              
+              // app/components/Button.test.tsx
+              import { render, screen, fireEvent } from '@testing-library/react';
+              import { Button } from './Button';
+              
+              describe('Button', () => {
+                it('should render with correct text', () => {
+                  render(<Button>Click me</Button>);
+                  expect(screen.getByText('Click me')).toBeInTheDocument();
+                });
+                
+                it('should call onClick when clicked', () => {
+                  const handleClick = jest.fn();
+                  render(<Button onClick={handleClick}>Click me</Button>);
+                  
+                  fireEvent.click(screen.getByText('Click me'));
+                  expect(handleClick).toHaveBeenCalledTimes(1);
+                });
+                
+                it('should be disabled when isLoading is true', () => {
+                  render(<Button isLoading={true}>Click me</Button>);
+                  
+                  const button = screen.getByRole('button');
+                  expect(button).toBeDisabled();
+                  expect(screen.getByText('Loading...')).toBeInTheDocument();
+                });
+                
+                it('should show success state when isSuccess is true', () => {
+                  render(<Button isSuccess={true}>Click me</Button>);
+                  
+                  expect(screen.getByText('Success!')).toBeInTheDocument();
+                });
+                
+                it('should show error state when isError is true', () => {
+                  render(<Button isError={true}>Click me</Button>);
+                  
+                  expect(screen.getByText('Error!')).toBeInTheDocument();
+                });
+              });
+              
+              // app/routes/__tests__/login.test.tsx
+              import { json, redirect } from '@remix-run/node';
+              import { createRequest } from 'node-mocks-http';
+              import { action } from '../login';
+              import { getUserByEmail, verifyPassword, createUserSession } from '~/models/user.server';
+              
+              // Mock the dependencies
+              jest.mock('~/models/user.server');
+              const mockedGetUserByEmail = getUserByEmail as jest.MockedFunction<typeof getUserByEmail>;
+              const mockedVerifyPassword = verifyPassword as jest.MockedFunction<typeof verifyPassword>;
+              const mockedCreateUserSession = createUserSession as jest.MockedFunction<typeof createUserSession>;
+              
+              describe('login action', () => {
+                beforeEach(() => {
+                  jest.clearAllMocks();
+                });
+                
+                it('should return error if email or password is missing', async () => {
+                  const request = createRequest({
+                    method: 'POST',
+                    body: '',
+                  });
+                  
+                  const response = await action({ request, params: {}, context: {} });
+                  
+                  expect(response).toEqual(
+                    json({ error: 'Email and password are required' }, { status: 400 })
+                  );
+                });
+                
+                it('should return error if user does not exist', async () => {
+                  mockedGetUserByEmail.mockResolvedValue(null);
+                  
+                  const request = createRequest({
+                    method: 'POST',
+                    body: 'email=test@example.com&password=password123',
+                  });
+                  
+                  const response = await action({ request, params: {}, context: {} });
+                  
+                  expect(response).toEqual(
+                    json({ error: 'Invalid email or password' }, { status: 400 })
+                  );
+                });
+                
+                it('should return error if password is incorrect', async () => {
+                  const mockUser = {
+                    id: '1',
+                    email: 'test@example.com',
+                    passwordHash: 'hashed-password',
+                  };
+                  
+                  mockedGetUserByEmail.mockResolvedValue(mockUser);
+                  mockedVerifyPassword.mockResolvedValue(false);
+                  
+                  const request = createRequest({
+                    method: 'POST',
+                    body: 'email=test@example.com&password=wrong-password',
+                  });
+                  
+                  const response = await action({ request, params: {}, context: {} });
+                  
+                  expect(response).toEqual(
+                    json({ error: 'Invalid email or password' }, { status: 400 })
+                  );
+                });
+                
+                it('should create user session and redirect if credentials are correct', async () => {
+                  const mockUser = {
+                    id: '1',
+                    email: 'test@example.com',
+                    passwordHash: 'hashed-password',
+                  };
+                  
+                  mockedGetUserByEmail.mockResolvedValue(mockUser);
+                  mockedVerifyPassword.mockResolvedValue(true);
+                  mockedCreateUserSession.mockResolvedValue(redirect('/dashboard'));
+                  
+                  const request = createRequest({
+                    method: 'POST',
+                    body: 'email=test@example.com&password=password123',
+                  });
+                  
+                  const response = await action({ request, params: {}, context: {} });
+                  
+                  expect(response).toEqual(redirect('/dashboard'));
+                  expect(mockedCreateUserSession).toHaveBeenCalledWith('1', '/dashboard');
+                });
+              });
+              
+              // e2e/tests/login.spec.ts
+              import { test, expect } from '@playwright/test';
+              
+              test('successful login', async ({ page }) => {
+                // Go to login page
+                await page.goto('/login');
+                
+                // Fill in login form
+                await page.fill('[type="email"]', 'test@example.com');
+                await page.fill('[type="password"]', 'password123');
+                
+                // Click login button
+                await page.click('button[type="submit"]');
+                
+                // Should be redirected to dashboard
+                await expect(page).toHaveURL('/dashboard');
+                
+                // Should see user greeting
+                await expect(page.locator('text=Welcome back')).toBeVisible();
+              });
+              
+              test('failed login with invalid credentials', async ({ page }) => {
+                // Go to login page
+                await page.goto('/login');
+                
+                // Fill in login form with invalid credentials
+                await page.fill('[type="email"]', 'test@example.com');
+                await page.fill('[type="password"]', 'wrong-password');
+                
+                // Click login button
+                await page.click('button[type="submit"]');
+                
+                // Should still be on login page
+                await expect(page).toHaveURL('/login');
+                
+                // Should see error message
+                await expect(page.locator('text=Invalid email or password')).toBeVisible();
+              });
+              
+              test('login form validation', async ({ page }) => {
+                // Go to login page
+                await page.goto('/login');
+                
+                // Try to submit with empty form
+                await page.click('button[type="submit"]');
+                
+                // Should still be on login page
+                await expect(page).toHaveURL('/login');
+                
+                // Should see validation error
+                await expect(page.locator('text=Email and password are required')).toBeVisible();
+              });
+            </code>
+          </example>
+        </practice>
+      </practices>
+    </category>
+  </categories>
+</best_practices>
