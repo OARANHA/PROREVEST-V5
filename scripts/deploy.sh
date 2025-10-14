@@ -136,15 +136,15 @@ NODE_ENV=production npm run build
 check_success "Build concluído com sucesso"
 
 # Verificar se build foi gerado
-if [ ! -d "dist" ] || [ -z "$(ls -A dist)" ]; then
-    log_error "Build falhou - diretório dist não encontrado ou vazio"
+if [ ! -d "build" ] || [ -z "$(ls -A build)" ]; then
+    log_error "Build falhou - diretório build não encontrado ou vazio"
     exit 1
 fi
 
 # Verificar arquivos críticos
 CRITICAL_FILES=("index.html")
 for file in "${CRITICAL_FILES[@]}"; do
-    if [ ! -f "dist/$file" ]; then
+    if [ ! -f "build/$file" ]; then
         log_error "Arquivo crítico não encontrado no build: $file"
         exit 1
     fi
@@ -154,7 +154,7 @@ log "✅ Arquivos críticos verificados"
 # Copiar arquivos para public_html
 log "📁 Copiando arquivos para public_html..."
 rm -rf "$PUBLIC_DIR"/*
-cp -r dist/* "$PUBLIC_DIR/"
+cp -r build/* "$PUBLIC_DIR/"
 check_success "Arquivos copiados para public_html"
 
 # Copiar .htaccess se existir
