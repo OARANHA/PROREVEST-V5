@@ -1113,6 +1113,10 @@ const BackToTopButton = () => {
   );
 };
 
+// Cache para produtos em destaque
+let productsCache: { data: any[], timestamp: number } | null = null;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+
 // Componente Principal
 const ProrevestApp = () => {
   const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
@@ -1120,8 +1124,21 @@ const ProrevestApp = () => {
 
   // Carregar produtos em destaque do Supabase
   useEffect(() => {
+    let isMounted = true;
+
     const loadFeaturedProducts = async () => {
       try {
+        // Verificar se há dados em cache válidos
+        const now = Date.now();
+        if (productsCache && (now - productsCache.timestamp) < CACHE_DURATION) {
+          if (isMounted) {
+            setFeaturedProducts(productsCache.data);
+            setLoading(false);
+          }
+          return;
+        }
+
+        setLoading(true);
         const { data, error } = await supabase
           .from('products')
           .select(`
@@ -1129,18 +1146,20 @@ const ProrevestApp = () => {
             categories:category_id(name),
             finishes:finish_id(name),
             product_variants(
-              id, 
-              image_url, 
+              id,
+              image_url,
               colors(id, name, hex_code)
             )
           `)
           .eq('is_featured', true)
           .limit(4);
 
+        if (!isMounted) return; // Evitar atualização de estado se componente foi desmontado
+
         if (error) {
           console.error('Erro ao carregar produtos em destaque:', error);
           // Fallback para produtos estáticos em caso de erro
-          setFeaturedProducts([
+          const fallbackProducts = [
             {
               id: "1",
               name: "Tinta Acrílica Premium",
@@ -1169,19 +1188,34 @@ const ProrevestApp = () => {
               rating: 4.8,
               reviews: 95
             }
-          ]);
+          ];
+          setFeaturedProducts(fallbackProducts);
+          // Não armazenar em cache dados de fallback
         } else {
-          setFeaturedProducts(data || []);
+          const validData = data || [];
+          setFeaturedProducts(validData);
+          // Armazenar em cache apenas dados válidos
+          productsCache = {
+            data: validData,
+            timestamp: now
+          };
         }
       } catch (err) {
+        if (!isMounted) return;
         console.error('Erro inesperado:', err);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     loadFeaturedProducts();
-  }, []);
+
+    return () => {
+      isMounted = false; // Cleanup para evitar memory leaks
+    };
+  }, []); // Dependências vazias - só executa uma vez na montagem
 
   useEffect(() => {
     // Rolar suavemente para âncoras
