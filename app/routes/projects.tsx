@@ -1,6 +1,6 @@
-import type { MetaFunction, LoaderFunctionArgs } from "react-router-dom";
+import type { MetaFunction } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Link, useLoaderData } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Search, MapPin, Calendar, Tag, ChevronRight } from "lucide-react";
 import { BlogService, type ProjectCase } from "../services/blogService";
 import { SiteHeader } from "../components/SiteHeader";
@@ -13,53 +13,93 @@ export const meta: MetaFunction = () => {
   ];
 }
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  try {
-    const url = new URL(request.url);
-    const search = url.searchParams.get("search") || "";
-    const category = url.searchParams.get("category") || "";
-    
-    const projects = await BlogService.getPublishedProjectCases();
-    
-    // Filtrar projetos com base na busca e categoria
-    const filteredProjects = projects.filter(project => {
-      const matchesSearch = search === "" || 
-        project.title.toLowerCase().includes(search.toLowerCase()) ||
-        project.description.toLowerCase().includes(search.toLowerCase()) ||
-        project.content.toLowerCase().includes(search.toLowerCase()) ||
-        project.client.toLowerCase().includes(search.toLowerCase());
-      
-      const matchesCategory = category === "" || project.category === category;
-      
-      return matchesSearch && matchesCategory;
-    });
-    
-    // Obter categorias únicas
-    const categories = await BlogService.getProjectCategories();
-    
-    return { projects: filteredProjects, categories, search, category };
-  } catch (error) {
-    console.error("Error loading projects:", error);
-    return { projects: [], categories: [], search: "", category: "", error: "Failed to load projects" };
-  }
-}
-
 export default function Projects() {
-  const { projects, categories, search, category, error } = useLoaderData() as { 
-    projects: ProjectCase[]; 
-    categories: string[]; 
-    search: string; 
-    category: string;
-    error?: string;
-  };
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [projects, setProjects] = useState<ProjectCase[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  const search = searchParams.get("search") || "";
+  const category = searchParams.get("category") || "";
   
   const [searchTerm, setSearchTerm] = useState(search);
   const [selectedCategory, setSelectedCategory] = useState(category);
 
   useEffect(() => {
+    loadProjects();
+  }, []);
+
+  useEffect(() => {
     setSearchTerm(search);
     setSelectedCategory(category);
   }, [search, category]);
+
+  const loadProjects = async () => {
+    try {
+      setLoading(true);
+      const [projectsData, categoriesData] = await Promise.all([
+        BlogService.getPublishedProjectCases(),
+        BlogService.getProjectCategories()
+      ]);
+      
+      setProjects(projectsData);
+      setCategories(categoriesData);
+      setError(null);
+    } catch (err) {
+      console.error("Error loading projects:", err);
+      setError("Falha ao carregar projetos");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredProjects = projects.filter(project => {
+    const matchesSearch = searchTerm === "" || 
+      project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      project.client.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesCategory = selectedCategory === "" || project.category === selectedCategory;
+    
+    return matchesSearch && matchesCategory;
+  });
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    if (value) {
+      searchParams.set("search", value);
+    } else {
+      searchParams.delete("search");
+    }
+    setSearchParams(searchParams);
+  };
+
+  const handleCategoryChange = (value: string) => {
+    setSelectedCategory(value);
+    if (value) {
+      searchParams.set("category", value);
+    } else {
+      searchParams.delete("category");
+    }
+    setSearchParams(searchParams);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <SiteHeader />
+        <div className="container mx-auto px-4 py-12 pt-20">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Carregando projetos...</p>
+          </div>
+        </div>
+        <SiteFooter />
+      </div>
+    );
+  }
 
   if (error) {
     return (
@@ -116,7 +156,7 @@ export default function Projects() {
         </div>
 
         {/* Projects */}
-        {projects.length === 0 ? (
+        {filteredProjects.length === 0 ? (
           <div className="text-center py-12">
             <h2 className="text-2xl font-cormorant font-bold mb-2">Nenhum projeto encontrado</h2>
             <p className="text-muted-foreground">
@@ -127,7 +167,7 @@ export default function Projects() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {projects.map(project => (
+            {filteredProjects.map(project => (
               <article key={project.id} className="bg-card border border-border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                 {project.featured_image && (
                   <img 

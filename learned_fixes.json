@@ -154,6 +154,26 @@
       "solution": "Corrigida integração do AdminEditButtonWrapper com verificação de permissões e navegação inteligente",
       "files_modified": ["app/routes/produto.$slug.tsx"],
       "impact": "Administradores agora podem editar produtos diretamente da página do produto"
+    },
+    {
+      "date": "2025-10-14T20:40:00.000Z",
+      "issue": "Erro de deploy estático com PGRST204 - coluna fullDescription não encontrada",
+      "solution": "Migração completa de deploy estático para Node.js SSR com PM2, configuração de ecosystem e scripts de deploy",
+      "files_modified": [
+        "ecosystem.config.js",
+        "react-router.config.ts",
+        "scripts/deploy-nodejs.sh",
+        ".env.production",
+        "RELATORIO_MIGRACAO_NODEJS_FINAL.md"
+      ],
+      "impact": "Aplicação agora funciona com SSR na VPS, resolvendo problemas de loaders e processamento de dados"
+    },
+    {
+      "date": "2025-10-14T20:40:00.000Z",
+      "issue": "Build falhando com erro de Supabase URL inválida",
+      "solution": "Adicionados placeholders temporários para variáveis de ambiente no .env.production",
+      "files_modified": [".env.production"],
+      "impact": "Build agora funciona corretamente para deploy Node.js"
     }
   ]
 }
