@@ -6,9 +6,9 @@
 set -e  # Parar em caso de erro
 
 # Configurações
-VPS_IP="SUA_VPS_IP"
+VPS_IP="194.163.167.131"
 VPS_USER="root"
-PROJECT_DIR="/var/www/prorevest"
+PROJECT_DIR="/home/ProRevest/web/prorevesttintas.com.br/private/repo"
 APP_NAME="prorevest-app"
 LOCAL_DIR="$(pwd)"
 
@@ -61,7 +61,7 @@ build_local() {
     rm -rf build/
     
     # Instalar dependências
-    npm ci
+    npm ci --legacy-peer-deps
     
     # Fazer build
     npm run build
@@ -127,23 +127,53 @@ EOF
 upload_files() {
     log_info "Enviando arquivos para VPS..."
     
-    # Upload do build
-    rsync -avz --delete build/ $VPS_USER@$VPS_IP:$PROJECT_DIR/
-    
-    # Upload de arquivos necessários
-    rsync -avz package.json $VPS_USER@$VPS_IP:$PROJECT_DIR/
-    rsync -avz package-lock.json $VPS_USER@$VPS_IP:$PROJECT_DIR/
-    
-    # Upload de variáveis de ambiente se existir
-    if [ -f ".env.production" ]; then
-        rsync -avz .env.production $VPS_USER@$VPS_IP:$PROJECT_DIR/.env
-        log_info "Arquivo .env.production enviado"
-    fi
-    
-    # Upload do ecosystem.config.js se existir
-    if [ -f "ecosystem.config.js" ]; then
-        rsync -avz ecosystem.config.js $VPS_USER@$VPS_IP:$PROJECT_DIR/
-        log_info "Arquivo ecosystem.config.js enviado"
+    # Verificar se rsync está disponível, senão usar scp
+    if command -v rsync &> /dev/null; then
+        log_info "Usando rsync para upload..."
+        # Upload do build
+        rsync -avz --delete build/ $VPS_USER@$VPS_IP:$PROJECT_DIR/
+        
+        # Upload de arquivos necessários
+        rsync -avz package.json $VPS_USER@$VPS_IP:$PROJECT_DIR/
+        rsync -avz package-lock.json $VPS_USER@$VPS_IP:$PROJECT_DIR/
+        
+        # Upload de variáveis de ambiente se existir
+        if [ -f ".env.production" ]; then
+            rsync -avz .env.production $VPS_USER@$VPS_IP:$PROJECT_DIR/.env
+            log_info "Arquivo .env.production enviado"
+        fi
+        
+        # Upload do ecosystem.config.js se existir
+        if [ -f "ecosystem.config.js" ]; then
+            rsync -avz ecosystem.config.js $VPS_USER@$VPS_IP:$PROJECT_DIR/
+            log_info "Arquivo ecosystem.config.js enviado"
+        fi
+    else
+        log_info "rsync não encontrado, usando SCP para upload..."
+        # Criar diretório temporário na VPS
+        ssh $VPS_USER@$VPS_IP "mkdir -p $PROJECT_DIR/temp_upload"
+        
+        # Upload do build usando scp
+        scp -r build/* $VPS_USER@$VPS_IP:$PROJECT_DIR/temp_upload/
+        
+        # Mover arquivos do temp para o destino
+        ssh $VPS_USER@$VPS_IP "cd $PROJECT_DIR && rm -rf client server 2>/dev/null || true && mv temp_upload/* . && rm -rf temp_upload"
+        
+        # Upload de arquivos necessários
+        scp package.json $VPS_USER@$VPS_IP:$PROJECT_DIR/
+        scp package-lock.json $VPS_USER@$VPS_IP:$PROJECT_DIR/
+        
+        # Upload de variáveis de ambiente se existir
+        if [ -f ".env.production" ]; then
+            scp .env.production $VPS_USER@$VPS_IP:$PROJECT_DIR/.env
+            log_info "Arquivo .env.production enviado"
+        fi
+        
+        # Upload do ecosystem.config.js se existir
+        if [ -f "ecosystem.config.js" ]; then
+            scp ecosystem.config.js $VPS_USER@$VPS_IP:$PROJECT_DIR/
+            log_info "Arquivo ecosystem.config.js enviado"
+        fi
     fi
     
     log_success "Arquivos enviados com sucesso"
