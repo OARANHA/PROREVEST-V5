@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, Outlet, ScrollRestoration, useNavigate, useLocation } from 'react-router-dom';
+import { Link, Outlet, ScrollRestoration, useNavigate } from 'react-router-dom';
 import { 
   UserIcon, 
   ShoppingCartIcon, 
@@ -42,10 +42,10 @@ export function Layout({ children, showHeaderFooter = true }: { children: React.
   const [isScrolled, setIsScrolled] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   
-  // Detectar se é rota admin para não mostrar header/footer
-  const isAdminRoute = location.pathname.startsWith('/admin');
+  // Para SSR, vamos assumir que não é rota admin por padrão
+  // O client-side navigation atualizará isso corretamente
+  const [isAdminRoute, setIsAdminRoute] = useState(false);
   const shouldShowHeaderFooter = showHeaderFooter && !isAdminRoute;
 
   // Estado para a pesquisa
@@ -86,6 +86,11 @@ export function Layout({ children, showHeaderFooter = true }: { children: React.
     return () => {
       window.removeEventListener('scroll', checkScroll);
     };
+  }, []);
+
+  // Detectar rota admin no cliente (após montagem)
+  useEffect(() => {
+    setIsAdminRoute(window.location.pathname.startsWith('/admin'));
   }, []);
 
   const toggleMenu = () => {
