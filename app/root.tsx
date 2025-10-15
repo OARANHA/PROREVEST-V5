@@ -5,14 +5,12 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  useLocation,
 } from "react-router-dom";
 import "./app.css";
 import { Layout as AppLayout } from "./components/Layout";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SEOHead } from "./components/SEOHead";
-import ProrevestApp from "./routes/home_prorevest";
 
 export const links = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -32,13 +30,7 @@ export const links = () => [
   }
 ];
 
-export function Layout() {
-  const location = useLocation();
-
-  // Verifica se é a página inicial ou páginas do blog
-  const isHomePage = location.pathname === '/';
-  const isBlogPage = location.pathname.startsWith('/blog');
-
+export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
       <head>
@@ -51,20 +43,9 @@ export function Layout() {
       <body>
         <ThemeProvider>
           <AuthProvider>
-            {isHomePage ? (
-              // Para a página inicial, carregamos diretamente o componente da home
-              <ProrevestApp />
-            ) : isBlogPage ? (
-              // Para as páginas do blog, aplicamos o Layout sem header/footer
-              <AppLayout showHeaderFooter={false}>
-                <Outlet />
-              </AppLayout>
-            ) : (
-              // Para as demais páginas, incluindo admin, aplicamos o AppLayout normal
-              <AppLayout>
-                <Outlet />
-              </AppLayout>
-            )}
+            <AppLayout>
+              {children}
+            </AppLayout>
           </AuthProvider>
         </ThemeProvider>
         <ScrollRestoration />
@@ -75,14 +56,6 @@ export function Layout() {
 }
 
 export default function App() {
-  const location = useLocation();
-  
-  // Para a página inicial, não usamos o Outlet pois o componente já é carregado diretamente
-  if (location.pathname === '/') {
-    return null;
-  }
-  
-  // Para todas as outras páginas, incluindo admin, usamos o Outlet
   return <Outlet />;
 }
 
