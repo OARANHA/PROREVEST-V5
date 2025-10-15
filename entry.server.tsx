@@ -2,6 +2,7 @@ import { PassThrough } from "node:stream";
 import type { EntryContext } from "@react-router/node";
 import { renderToPipeableStream } from "react-dom/server";
 import { createStaticHandler, createStaticRouter } from "react-router";
+import { RouterProvider } from "react-router-dom";
 import routes from "./app/routes";
 
 export default function handleRequest(
@@ -21,7 +22,7 @@ export default function handleRequest(
   let router = createStaticRouter(result.routes, result.context);
 
   let stream = renderToPipeableStream(
-    <router.Provider router={router} />,
+    <RouterProvider router={router} />,
     {
       bootstrapScripts: entryContext.bootstrapScripts,
       bootstrapModules: entryContext.bootstrapModules,
