@@ -1,26 +1,38 @@
-import { renderToString } from "react-dom/server";
-import { createStaticHandler, createStaticRouter } from "react-router-server";
+import { PassThrough } from "node:stream";
+import type { EntryContext } from "@react-router/node";
+import { renderToPipeableStream } from "react-dom/server";
+import { createStaticHandler, createStaticRouter } from "react-router";
 import routes from "./app/routes";
 
-export async function render(request: Request, responseStatusCode = 200, responseHeaders = {}) {
-  let { query } = createStaticHandler(routes);
-  let result = await query(request);
+export default function handleRequest(
+  request: Request,
+  responseStatusCode: number,
+  responseHeaders: Headers,
+  entryContext: EntryContext
+) {
+  let handler = createStaticHandler(routes);
+  let url = new URL(request.url);
+  let result = handler.query(url);
 
   if (result instanceof Response) {
     return result;
   }
 
-  let router = createStaticRouter(routes);
+  let router = createStaticRouter(result.routes, result.context);
 
-  let html = renderToString(
-    <StaticRouterProvider router={router} />
+  let stream = renderToPipeableStream(
+    <router.Provider router={router} />,
+    {
+      bootstrapScripts: entryContext.bootstrapScripts,
+      bootstrapModules: entryContext.bootstrapModules,
+      onShellReady() {
+        responseHeaders.set("Content-Type", "text/html");
+      },
+    }
   );
 
-  return new Response(`<!DOCTYPE html>` + html, {
+  return new Response(stream, {
     status: responseStatusCode,
-    headers: {
-      "Content-Type": "text/html",
-      ...responseHeaders,
-    },
+    headers: responseHeaders,
   });
 }

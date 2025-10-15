@@ -21,9 +21,15 @@ export default defineConfig({
         }
         warn(warning)
       }
-    }
+    },
+    assetsInlineLimit: 4096,
+    target: 'esnext',
+    ssrEmitAssets: true
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom']
+  },
+  ssr: {
+    noExternal: ['react-router-dom']
   }
 });
